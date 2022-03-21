@@ -72,6 +72,8 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
 
             underlyings.push(IAsset(address(tokens[i])));
         }
+
+        _giveAllowances();
     }
 
     /**
@@ -118,6 +120,9 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      */
     function _swapBeetsToWftm() internal {
         uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
+        if (beetsBal == 0) {
+            return;
+        }
 
         IBeetVault.SingleSwap memory singleSwap;
         singleSwap.poolId = WFTM_BEETS_POOL;
@@ -161,6 +166,9 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      */
     function _joinPool() internal {
         uint256 wftmBal = IERC20Upgradeable(WFTM).balanceOf(address(this));
+        if (wftmBal == 0) {
+            return;
+        }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
@@ -223,10 +231,14 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
         _joinPool();
 
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
-        IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
+        if (poolBal != 0) {
+            IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
+        }
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
-        IERC20Upgradeable(want).safeTransfer(vault, wantBalance);
+        if (wantBalance != 0) {
+            IERC20Upgradeable(want).safeTransfer(vault, wantBalance);
+        }
     }
 
     /**
