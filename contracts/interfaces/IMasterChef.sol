@@ -3,63 +3,75 @@
 pragma solidity ^0.8.0;
 
 interface IMasterChef {
-    function TOTAL_REWARDS() external view returns (uint256);
+    function POOL_PERCENTAGE() external view returns (uint256);
+
+    function TREASURY_PERCENTAGE() external view returns (uint256);
 
     function add(
         uint256 _allocPoint,
-        address _token,
-        bool _withUpdate,
-        uint256 _lastRewardTime
+        address _lpToken,
+        address _rewarder
     ) external;
 
-    function deposit(uint256 _pid, uint256 _amount) external;
+    function beets() external view returns (address);
 
-    function emergencyWithdraw(uint256 _pid) external;
+    function beetsPerBlock() external view returns (uint256);
 
-    function getGeneratedReward(uint256 _fromTime, uint256 _toTime) external view returns (uint256);
-
-    function governanceRecoverUnsupported(
-        address _token,
-        uint256 amount,
-        address to
+    function deposit(
+        uint256 _pid,
+        uint256 _amount,
+        address _to
     ) external;
 
-    function massUpdatePools() external;
+    function emergencyWithdraw(uint256 _pid, address _to) external;
 
-    function operator() external view returns (address);
+    function harvest(uint256 _pid, address _to) external;
 
-    function pendingShare(uint256 _pid, address _user) external view returns (uint256);
+    function lpTokens(uint256) external view returns (address);
 
-    function poolEndTime() external view returns (uint256);
+    function owner() external view returns (address);
+
+    function pendingBeets(uint256 _pid, address _user) external view returns (uint256 pending);
 
     function poolInfo(uint256)
         external
         view
         returns (
-            address token,
             uint256 allocPoint,
-            uint256 lastRewardTime,
-            uint256 accTSharePerShare,
-            bool isStarted
+            uint256 lastRewardBlock,
+            uint256 accBeetsPerShare
         );
 
-    function poolStartTime() external view returns (uint256);
+    function poolLength() external view returns (uint256);
 
-    function runningTime() external view returns (uint256);
+    function renounceOwnership() external;
 
-    function set(uint256 _pid, uint256 _allocPoint) external;
+    function rewarder(uint256) external view returns (address);
 
-    function setOperator(address _operator) external;
+    function set(
+        uint256 _pid,
+        uint256 _allocPoint,
+        address _rewarder,
+        bool overwrite
+    ) external;
 
-    function tSharePerSecond() external view returns (uint256);
+    function startBlock() external view returns (uint256);
 
     function totalAllocPoint() external view returns (uint256);
 
-    function tshare() external view returns (address);
+    function transferOwnership(address newOwner) external;
 
-    function updatePool(uint256 _pid) external;
+    function treasury(address _treasuryAddress) external;
+
+    function treasuryAddress() external view returns (address);
+
+    function updateEmissionRate(uint256 _beetsPerBlock) external;
 
     function userInfo(uint256, address) external view returns (uint256 amount, uint256 rewardDebt);
 
-    function withdraw(uint256 _pid, uint256 _amount) external;
+    function withdrawAndHarvest(
+        uint256 _pid,
+        uint256 _amount,
+        address _to
+    ) external;
 }
