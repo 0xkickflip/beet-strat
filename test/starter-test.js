@@ -36,10 +36,10 @@ describe('Vaults', function () {
   
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x5E02aB5699549675A6d3BEEb92A62782712D0509';
-  const mcPoolId = 36;
+  const wantAddress = '0x22B30B00e6796Daf710fBE5cAFBFc9Cdd1377f2A';
+  const mcPoolId = 5;
 
-  const wantHolderAddr = '0x61EC29771535251D52D3fDDed6133808D21ec6cb';
+  const wantHolderAddr = '0x7a9E19a9b0ff5aE75777753AEf4d70097fC62506';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
   
   let owner;
@@ -75,7 +75,7 @@ describe('Vaults', function () {
 
     //get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenWftmUnderlying');
+    Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenUsdcUnderlying');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     //deploy contracts
@@ -253,7 +253,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to harvest', async function () {
-      await vault.connect(wantHolder).deposit(toWantUnit('1000'));
+      await vault.connect(wantHolder).deposit(toWantUnit('100'));
       await strategy.harvest();
     });
 
@@ -322,7 +322,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to estimate harvest', async function () {
-      const whaleDepositAmount = toWantUnit('1000');
+      const whaleDepositAmount = toWantUnit('100');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
       await strategy.harvest();
