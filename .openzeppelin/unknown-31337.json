@@ -3,7 +3,12 @@
   "proxies": [
     {
       "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-      "txHash": "0x64432ccb6680e552b49e2c456b6adada14d6e110362361006a89bd7bf7140d40",
+      "txHash": "0x1aa39c144396ffffcca2e53d040c1ab5b8db54ca15fa3b04c2747493a0ca51af",
+      "kind": "uups"
+    },
+    {
+      "address": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
+      "txHash": "0x40e0f7c9ab60b4268121eb3a2e026add63d11164de6f4a7af6c8c75e6044e5f6",
       "kind": "uups"
     }
   ],
@@ -538,9 +543,9 @@
         }
       }
     },
-    "d06361f9e74efc2000928feeb0b62f664b5c296d562e8cb3ee80de0a99758999": {
-      "address": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
-      "txHash": "0x51618d8e31d3740ffff92143ed22e67960ef1725f169dcc0f793a0f1e90a7da3",
+    "b25d16253d2df2fa95525b5da9fb1be48c70a69d5b2d800aa8fb2023f58fe77e": {
+      "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+      "txHash": "0x5e8246da1a69a98754ccd84dca9c907532c82c247332606b0b33964405d8af0c",
       "layout": {
         "storage": [
           {
@@ -618,7 +623,7 @@
           {
             "contract": "ReaperBaseStrategyv1_1",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)6838_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)7107_storage)dyn_storage",
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:27"
           },
           {
@@ -688,44 +693,44 @@
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:77"
           },
           {
-            "contract": "ReaperStrategyBeethovenUsdcUnderlying",
+            "contract": "ReaperStrategyGodBetweenTwoStables",
             "label": "want",
             "type": "t_address",
-            "src": "contracts/ReaperStrategyBeethovenUsdcUnderlying.sol:37"
+            "src": "contracts/ReaperStrategyGodBetweenTwoStables.sol:41"
           },
           {
-            "contract": "ReaperStrategyBeethovenUsdcUnderlying",
+            "contract": "ReaperStrategyGodBetweenTwoStables",
             "label": "underlyings",
-            "type": "t_array(t_contract(IAsset)7655)dyn_storage",
-            "src": "contracts/ReaperStrategyBeethovenUsdcUnderlying.sol:38"
+            "type": "t_array(t_contract(IAsset)7924)dyn_storage",
+            "src": "contracts/ReaperStrategyGodBetweenTwoStables.sol:42"
           },
           {
-            "contract": "ReaperStrategyBeethovenUsdcUnderlying",
+            "contract": "ReaperStrategyGodBetweenTwoStables",
             "label": "mcPoolId",
             "type": "t_uint256",
-            "src": "contracts/ReaperStrategyBeethovenUsdcUnderlying.sol:50"
+            "src": "contracts/ReaperStrategyGodBetweenTwoStables.sol:54"
           },
           {
-            "contract": "ReaperStrategyBeethovenUsdcUnderlying",
+            "contract": "ReaperStrategyGodBetweenTwoStables",
             "label": "beetsPoolId",
             "type": "t_bytes32",
-            "src": "contracts/ReaperStrategyBeethovenUsdcUnderlying.sol:51"
+            "src": "contracts/ReaperStrategyGodBetweenTwoStables.sol:55"
           },
           {
-            "contract": "ReaperStrategyBeethovenUsdcUnderlying",
+            "contract": "ReaperStrategyGodBetweenTwoStables",
             "label": "usdcPosition",
             "type": "t_uint256",
-            "src": "contracts/ReaperStrategyBeethovenUsdcUnderlying.sol:52"
+            "src": "contracts/ReaperStrategyGodBetweenTwoStables.sol:56"
           }
         ],
         "types": {
           "t_address": {
             "label": "address"
           },
-          "t_array(t_contract(IAsset)7655)dyn_storage": {
+          "t_array(t_contract(IAsset)7924)dyn_storage": {
             "label": "contract IAsset[]"
           },
-          "t_contract(IAsset)7655": {
+          "t_contract(IAsset)7924": {
             "label": "contract IAsset"
           },
           "t_uint256": {
@@ -734,10 +739,10 @@
           "t_bytes32": {
             "label": "bytes32"
           },
-          "t_array(t_struct(Harvest)6838_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)7107_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest[]"
           },
-          "t_struct(Harvest)6838_storage": {
+          "t_struct(Harvest)7107_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest",
             "members": [
               {

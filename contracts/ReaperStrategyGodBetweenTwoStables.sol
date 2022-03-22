@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "./abstract/ReaperBaseStrategyv1_1.sol";
 import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
-import "./interfaces/IBaseV1Router01.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IDeusRewarder.sol";
@@ -25,13 +24,11 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
     address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
-    address public constant SOLIDLY_ROUTER = address(0xa38cd27185a464914D3046f0AB9d43356B34829D);
 
     /**
      * @dev Tokens Used:
      * {WFTM} - Required for liquidity routing when doing swaps.
      * {USDC} - Token used to join the Beethoven-X pool using the rewards.
-     * {DEI} - Token used to join the Beethoven-X pool using the rewards.
      * {BEETS} - Reward token for depositing LP into MasterChef.
      * {DEUS} - Secondary reward token for depositing LP into MasterChef.
      * {want} - LP token for the Beethoven-x pool.
@@ -39,7 +36,6 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
-    address public constant DEI = address(0xDE12c7959E1a72bbe8a5f7A1dc8f8EeF9Ab011B3);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
     address public constant DEUS = address(0xDE5ed76E7c05eC5e4572CfC88d1ACEA165109E44);
     address public want;
@@ -54,12 +50,10 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {usdcPosition} - Index of {USDC} in the Beethoven-X pool
-     * {deiPosition} - Index of {DEI} in the Beethoven-X pool
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
     uint256 public usdcPosition;
-    uint256 public deiPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -81,8 +75,6 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == USDC) {
                 usdcPosition = i;
-            } else if (address(tokens[i]) == DEI) {
-                deiPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -117,9 +109,9 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
      *      1. Claims {BEETS} and {DEUS} from the {MASTER_CHEF}.
-     *      2. Uses totalFee% of {BEETS} and {DEUS} to swap to {WFTM} and charge fees.
-     *      3. Swaps remaining {BEETS} to {USDC}, and remaining {DEUS} to {DEI}.
-     *      4. Joins {beetsPoolId} using any {USDC} and {DEI}.
+     *      2. Uses totalFee% of {BEETS}, and full {DEUS} to swap to {WFTM} and charge fees.
+     *      3. Swaps remaining {BEETS} to {USDC}, and remaining {WFTM} to {USDC}.
+     *      4. Joins {beetsPoolId} using {USDC}.
      *      5. Deposits.
      */
     function _harvestCore() internal override {
@@ -127,7 +119,7 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
         _chargeFees();
 
         _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL);
-        _routerSwap(DEUS, DEI, IERC20Upgradeable(DEUS).balanceOf(address(this)), SOLIDLY_ROUTER);
+        _routerSwap(WFTM, USDC, IERC20Upgradeable(WFTM).balanceOf(address(this)), SPOOKY_ROUTER);
 
         _joinPool();
         deposit();
@@ -138,13 +130,21 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
      *      Charges fees based on the amount of {BEETS} and {DEUS} gained from reward
      */
     function _chargeFees() internal {
+        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
+        uint256 wftmFee;
+
+        // fee from {BEETS} is full {WFTM} balance difference since we only swap {totalFee}% of {BEETS}
+        uint256 wftmBalBefore = wftm.balanceOf(address(this));
         uint256 beetsFee = (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         _beethovenSwap(BEETS, WFTM, beetsFee, WFTM_BEETS_POOL);
-        uint256 deusFee = (IERC20Upgradeable(DEUS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        _routerSwap(DEUS, WFTM, deusFee, SPIRIT_ROUTER);
+        wftmFee += wftm.balanceOf(address(this)) - wftmBalBefore;
 
-        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = wftm.balanceOf(address(this));
+        // fee from {DEUS} is {totalFee}% of {WFTM} balance difference since we swap all of {DEUS}
+        wftmBalBefore = wftm.balanceOf(address(this));
+        uint256 deusBal = IERC20Upgradeable(DEUS).balanceOf(address(this));
+        _routerSwap(DEUS, WFTM, deusBal, SPIRIT_ROUTER);
+        wftmFee += ((wftm.balanceOf(address(this)) - wftmBalBefore) * totalFee) / PERCENT_DIVISOR;
+
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
@@ -201,40 +201,31 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
             return;
         }
 
+        address[] memory path = new address[](2);
+        path[0] = _from;
+        path[1] = _to;
         IERC20Upgradeable(_from).safeIncreaseAllowance(_router, _amount);
-        if (_router == SOLIDLY_ROUTER) {
-            IBaseV1Router01 router = IBaseV1Router01(_router);
-            (, bool stable) = router.getAmountOut(_amount, _from, _to);
-            router.swapExactTokensForTokensSimple(_amount, 0, _from, _to, stable, address(this), block.timestamp);
-        } else {
-            IUniswapV2Router02 router = IUniswapV2Router02(_router);
-            address[] memory path = new address[](2);
-            path[0] = _from;
-            path[1] = _to;
-            router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                _amount,
-                0,
-                path,
-                address(this),
-                block.timestamp
-            );
-        }
+        IUniswapV2Router02(_router).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _amount,
+            0,
+            path,
+            address(this),
+            block.timestamp
+        );
     }
 
     /**
-     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} and {DEI} balance;
+     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} balance;
      */
     function _joinPool() internal {
         uint256 usdcBal = IERC20Upgradeable(USDC).balanceOf(address(this));
-        uint256 deiBal = IERC20Upgradeable(DEI).balanceOf(address(this));
-        if (usdcBal == 0 && deiBal == 0) {
+        if (usdcBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
         amountsIn[usdcPosition] = usdcBal;
-        amountsIn[deiPosition] = deiBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -245,7 +236,6 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
         request.fromInternalBalance = false;
 
         IERC20Upgradeable(USDC).safeIncreaseAllowance(BEET_VAULT, usdcBal);
-        IERC20Upgradeable(DEI).safeIncreaseAllowance(BEET_VAULT, deiBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
@@ -304,7 +294,8 @@ contract ReaperStrategyGodBetweenTwoStables is ReaperBaseStrategyv1_1 {
     function _retireStrat() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL);
-        _routerSwap(DEUS, DEI, IERC20Upgradeable(DEUS).balanceOf(address(this)), SOLIDLY_ROUTER);
+        _routerSwap(DEUS, WFTM, IERC20Upgradeable(DEUS).balanceOf(address(this)), SPIRIT_ROUTER);
+        _routerSwap(WFTM, USDC, IERC20Upgradeable(WFTM).balanceOf(address(this)), SPOOKY_ROUTER);
         _joinPool();
 
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
