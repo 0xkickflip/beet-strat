@@ -33,6 +33,7 @@ describe('Vaults', function () {
 
   let Want;
   let want;
+  let beets;
   
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
@@ -41,10 +42,14 @@ describe('Vaults', function () {
 
   const wantHolderAddr = '0x83b285e802d76055169b1c5e3bf21702b85b89cb';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
+
+  const beetsAddress = '0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e';
+  const beetsHolderAddr = '0x34e614870b63BA1689E362Fda112C9bB3f925d7a';
   
   let owner;
   let wantHolder;
   let strategist;
+  let beetsHolder;
 
   beforeEach(async function () {
     //reset network
@@ -72,6 +77,11 @@ describe('Vaults', function () {
       params: [strategistAddr],
     });
     strategist = await ethers.provider.getSigner(strategistAddr);
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [beetsHolderAddr],
+    });
+    beetsHolder = await ethers.provider.getSigner(beetsHolderAddr);
 
     //get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
@@ -269,7 +279,9 @@ describe('Vaults', function () {
       await strategy.updateHarvestLogCadence(1);
 
       const numHarvests = 5;
+      beets = Want.attach(beetsAddress);
       for (let i = 0; i < numHarvests; i++) {
+        await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
         await moveBlocksForward(100);
         await strategy.harvest();
       }
