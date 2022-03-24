@@ -2,8 +2,8 @@ async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
   const wantAddress = '0x1577Eb091D3933A89BE62130484e090bb8BD0E58';
-  const tokenName = 'The Vaults Of The Lonely Mountain Beethoven-X Crypt';
-  const tokenSymbol = 'rfBPT-RING';
+  const tokenName = 'In The Hall Of The Mountain King';
+  const tokenSymbol = 'rfBPT-SUMMIT';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
   const options = {gasPrice: 200000000000, gasLimit: 9000000};
