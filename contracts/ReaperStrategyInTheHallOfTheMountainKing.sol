@@ -10,9 +10,6 @@ import "./interfaces/IBeetVault.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @dev LP compounding strategy for In The Hall Of The Mountain King Beethoven-X pool.
