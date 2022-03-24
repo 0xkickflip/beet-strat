@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = 'TODO';
+  const vaultAddress = '0x9AdA860dd52697764DE9212a86847cFC14094199';
 
   const Strategy = await ethers.getContractFactory('ReaperStrategyTheVaultsOfTheLonelyMountain');
   const treasuryAddress = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
@@ -11,7 +11,7 @@ async function main() {
   const strategist3 = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
   const wantAddress = '0xC9Ba718A71bFA34cedEa910AC37B879e5913c14e';
   const mcPoolId = 42;
-  const options = {gasPrice: 200000000000, gasLimit: 9000000};
+  const options = {gasPrice: 320000000000, gasLimit: 9000000};
 
   const strategy = await hre.upgrades.deployProxy(
     Strategy,
