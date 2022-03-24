@@ -11,7 +11,6 @@ import "./interfaces/IMasterChef.sol";
 import "./interfaces/ITimeBasedMasterChefRewarder.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 /**
  * @dev LP compounding strategy for The Vaults Of The Lonely Mountain Beethoven-X pool.
