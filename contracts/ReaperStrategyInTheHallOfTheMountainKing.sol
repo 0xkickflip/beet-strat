@@ -111,10 +111,9 @@ contract ReaperStrategyInTheHallOfTheMountainKing is ReaperBaseStrategyv1_1 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {BEETS} and {RING} from the {MASTER_CHEF}.
-     *      2. Uses totalFee% of {BEETS} and {RING} to swap to {WFTM} and charge fees.
-     *      3. Swaps remaining {BEETS} to {USDC}.
-     *      4. Joins {beetsPoolId} using any {USDC} and {RING}.
+     *      1. Claims {BEETS} and {SUMMIT} from the {MASTER_CHEF}.
+     *      2. Swaps {BEETS} to {WFTM} and charges fees.
+     *      4. Joins {beetsPoolId} using {WFTM} and {SUMMIT}.
      *      5. Deposits.
      */
     function _harvestCore() internal override {
@@ -126,7 +125,7 @@ contract ReaperStrategyInTheHallOfTheMountainKing is ReaperBaseStrategyv1_1 {
 
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of BEETS and RING gained from reward
+     *      Charges fees based on the amount of BEETS and SUMMIT gained from reward
      */
     function _chargeFees() internal {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
@@ -243,7 +242,7 @@ contract ReaperStrategyInTheHallOfTheMountainKing is ReaperBaseStrategyv1_1 {
         }
 
         // Estimate rewards from SUMMIT
-        profit = profit * summitRewardFactor  / PERCENT_DIVISOR;
+        profit += profit * summitRewardFactor  / PERCENT_DIVISOR;
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
 
@@ -298,6 +297,11 @@ contract ReaperStrategyInTheHallOfTheMountainKing is ReaperBaseStrategyv1_1 {
         IERC20Upgradeable(want).safeApprove(MASTER_CHEF, 0);
     }
 
+    /**
+     * @dev Sets the factor used to multiply the BEETS rewards
+     * to estimate the total harvest (no liquidity on SUMMIT to check)
+     * In basis points so 23000 is when SUMMIT reward is 2,3x BEET reward
+     */
     function setSummitRewardFactor(
         uint256 _rewardFactor
     ) external {
