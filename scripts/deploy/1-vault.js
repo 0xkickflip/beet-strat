@@ -1,7 +1,7 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0xC9Ba718A71bFA34cedEa910AC37B879e5913c14e';
+  const wantAddress = '0x1577Eb091D3933A89BE62130484e090bb8BD0E58';
   const tokenName = 'The Vaults Of The Lonely Mountain Beethoven-X Crypt';
   const tokenSymbol = 'rfBPT-RING';
   const depositFee = 0;

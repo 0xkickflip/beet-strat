@@ -8,7 +8,7 @@
     },
     {
       "address": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
-      "txHash": "0xa17dfe1278ee3d3383969a06e76e12c20edc198740a4b6b5e0f055c019cd070c",
+      "txHash": "0x0c1479b9d41a5fef7cc7ab7d0b41b2d73d599381d586e003e7f4274eae9b80ff",
       "kind": "uups"
     }
   ],
@@ -817,9 +817,9 @@
         }
       }
     },
-    "1cfb599c0edd9f5c43e063b7370c28be5cf83c006a756109940dc79eb654e219": {
+    "77db41ed094abdba253fc6d6be1f89a7b18cf1d4058e7fc03bf4fdce60e981b8": {
       "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-      "txHash": "0x8d5151228e89815057dee175377f39ab9116d1642e055a54d752377947b70c9e",
+      "txHash": "0xc1c477edb6962f8de46c2f36f9b654098fedb88bb7cd8c68cd10eb1b77fa37df",
       "layout": {
         "storage": [
           {
@@ -922,7 +922,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)7048_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6960_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv1_1",
             "src": "contracts\\abstract\\ReaperBaseStrategyv1_1.sol:27"
           },
@@ -1019,48 +1019,56 @@
             "offset": 0,
             "slot": "363",
             "type": "t_address",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:42"
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:37"
           },
           {
             "label": "underlyings",
             "offset": 0,
             "slot": "364",
-            "type": "t_array(t_contract(IAsset)7865)dyn_storage",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:43"
+            "type": "t_array(t_contract(IAsset)7777)dyn_storage",
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:38"
           },
           {
             "label": "mcPoolId",
             "offset": 0,
             "slot": "365",
             "type": "t_uint256",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:58"
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:51"
           },
           {
             "label": "beetsPoolId",
             "offset": 0,
             "slot": "366",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:59"
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:52"
           },
           {
-            "label": "usdcPosition",
+            "label": "wftmPosition",
             "offset": 0,
             "slot": "367",
             "type": "t_uint256",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:60"
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:53"
           },
           {
-            "label": "ringPosition",
+            "label": "summitPosition",
             "offset": 0,
             "slot": "368",
             "type": "t_uint256",
-            "contract": "ReaperStrategyTheVaultsOfTheLonelyMountain",
-            "src": "contracts\\ReaperStrategyTheVaultsOfTheLonelyMountain.sol:61"
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:54"
+          },
+          {
+            "label": "summitRewardFactor",
+            "offset": 0,
+            "slot": "369",
+            "type": "t_uint256",
+            "contract": "ReaperStrategyInTheHallOfTheMountainKing",
+            "src": "contracts\\ReaperStrategyInTheHallOfTheMountainKing.sol:55"
           }
         ],
         "types": {
@@ -1072,11 +1080,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_contract(IAsset)7865)dyn_storage": {
+          "t_array(t_contract(IAsset)7777)dyn_storage": {
             "label": "contract IAsset[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)7048_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6960_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -1096,7 +1104,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IAsset)7865": {
+          "t_contract(IAsset)7777": {
             "label": "contract IAsset",
             "numberOfBytes": "20"
           },
@@ -1128,7 +1136,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)7048_storage": {
+          "t_struct(Harvest)6960_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest",
             "members": [
               {
