@@ -33,18 +33,18 @@ contract ReaperStrategyTheVaultsOfTheLonelyMountain is ReaperBaseStrategyv1_1 {
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
-    address public constant WFTM  = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
-    address public constant USDC  = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
+    address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
+    address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
-    address public constant RING  = address(0x582423C10c9e83387a96d00A69bA3D11ee47B7b5);
+    address public constant RING = address(0x582423C10c9e83387a96d00A69bA3D11ee47B7b5);
     address public want;
     IAsset[] underlyings;
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
-    bytes32 public constant USDC_WFTM_POOL  = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
-    bytes32 public constant USDC_RING_POOL  = 0xc9ba718a71bfa34cedea910ac37b879e5913c14e0002000000000000000001ad;
+    bytes32 public constant USDC_WFTM_POOL = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
+    bytes32 public constant USDC_RING_POOL = 0xc9ba718a71bfa34cedea910ac37b879e5913c14e0002000000000000000001ad;
 
     /**
      * @dev Strategy variables
