@@ -8,14 +8,15 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IMasterChef.sol";
+import "./interfaces/ITimeBasedMasterChefRewarder.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 /**
- * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
+ * @dev LP compounding strategy for The Vaults Of The Lonely Mountain Beethoven-X pool.
  */
-contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
+contract ReaperStrategyTheVaultsOfTheLonelyMountain is ReaperBaseStrategyv1_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -28,28 +29,34 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
      * {WFTM} - Required for liquidity routing when doing swaps.
      * {USDC} - Token used to join the Beethoven-X pool using the rewards.
      * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {RING} - 2nd Reward token for depositing LP into MasterChef.
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
-    address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
-    address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
+    address public constant WFTM  = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
+    address public constant USDC  = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant RING  = address(0x582423C10c9e83387a96d00A69bA3D11ee47B7b5);
     address public want;
     IAsset[] underlyings;
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
+    bytes32 public constant USDC_WFTM_POOL  = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
+    bytes32 public constant USDC_RING_POOL  = 0xc9ba718a71bfa34cedea910ac37b879e5913c14e0002000000000000000001ad;
 
     /**
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {usdcPosition} - Index of {USDC} in the Beethoven-X pool
+     * {ringPosition} - Index of {RING} in the Beethoven-X pool
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
     uint256 public usdcPosition;
+    uint256 public ringPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -71,6 +78,8 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == USDC) {
                 usdcPosition = i;
+            } else if (address(tokens[i]) == RING) {
+                ringPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -104,10 +113,10 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {BEETS} from the {MASTER_CHEF}.
-     *      2. Uses totalFee% of {BEETS} to swap to {WFTM} and charge fees.
+     *      1. Claims {BEETS} and {RING} from the {MASTER_CHEF}.
+     *      2. Uses totalFee% of {BEETS} and {RING} to swap to {WFTM} and charge fees.
      *      3. Swaps remaining {BEETS} to {USDC}.
-     *      4. Joins {beetsPoolId} using any {USDC}.
+     *      4. Joins {beetsPoolId} using any {USDC} and {RING}.
      *      5. Deposits.
      */
     function _harvestCore() internal override {
@@ -120,11 +129,16 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
 
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of BEETS gained from reward
+     *      Charges fees based on the amount of BEETS and RING gained from reward
      */
     function _chargeFees() internal {
         uint256 beetsFee = (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         _swap(BEETS, WFTM, beetsFee, WFTM_BEETS_POOL);
+
+        uint256 ringFee = (IERC20Upgradeable(RING).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        _swap(RING, USDC, ringFee, USDC_RING_POOL);
+        uint256 usdcFee = IERC20Upgradeable(USDC).balanceOf(address(this));
+        _swap(USDC, WFTM, usdcFee, USDC_WFTM_POOL);
 
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 wftmFee = wftm.balanceOf(address(this));
@@ -172,17 +186,19 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
     }
 
     /**
-     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} balance;
+     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} and {RING} balance;
      */
     function _joinPool() internal {
         uint256 usdcBal = IERC20Upgradeable(USDC).balanceOf(address(this));
-        if (usdcBal == 0) {
+        uint256 ringBal = IERC20Upgradeable(RING).balanceOf(address(this));
+        if (usdcBal == 0 && ringBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
         amountsIn[usdcPosition] = usdcBal;
+        amountsIn[ringPosition] = ringBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -193,6 +209,7 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
         request.fromInternalBalance = false;
 
         IERC20Upgradeable(USDC).safeIncreaseAllowance(BEET_VAULT, usdcBal);
+        IERC20Upgradeable(RING).safeIncreaseAllowance(BEET_VAULT, ringBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
@@ -210,7 +227,10 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        ITimeBasedMasterChefRewarder rewarder = ITimeBasedMasterChefRewarder(masterChef.rewarder(mcPoolId));
+
+        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
         if (totalRewards != 0) {
@@ -219,6 +239,17 @@ contract ReaperStrategyBeethovenUsdcUnderlying is ReaperBaseStrategyv1_1 {
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+        }
+
+        // {RING} reward
+        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(RING).balanceOf(address(this));
+        if (totalRewards != 0) {
+            address[] memory ringToWftmPath = new address[](3);
+            ringToWftmPath[0] = RING;
+            ringToWftmPath[1] = USDC;
+            ringToWftmPath[2] = WFTM;
+            profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, ringToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
