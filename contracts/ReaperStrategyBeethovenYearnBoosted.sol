@@ -74,7 +74,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            // skip BPT token since that's also registered as a pool token
+            // skip {want} since that's also registered as a pool token
             if (address(tokens[i]) == _want) {
                 continue;
             }
@@ -145,8 +145,12 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
      *      Charges fees based on the amount of WFTM gained from reward
      */
     function _chargeFees() internal {
+        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
+        uint256 wftmFee = 0;
+
         if (wftmUnderlying) {
             _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
+            wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         } else {
             _swap(
                 BEETS,
@@ -154,10 +158,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
                 (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
                 WFTM_BEETS_POOL
             );
+            wftmFee = wftm.balanceOf(address(this));
         }
 
-        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
