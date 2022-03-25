@@ -3,7 +3,12 @@
   "proxies": [
     {
       "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-      "txHash": "0x43e9519daf0264f3c193cafe8b4eb99879d71c01f894f15ad46e331abcb9dff7",
+      "txHash": "0x4d2f22bd04ddbdb8523651504ca6aee4f36c12e238191f01ddfc917c0dc505a7",
+      "kind": "uups"
+    },
+    {
+      "address": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
+      "txHash": "0x04c06ae144214548a59168e36f5c26d8b269c8fda74609a18bb558d3d3b61ab5",
       "kind": "uups"
     }
   ],
@@ -538,9 +543,9 @@
         }
       }
     },
-    "ced694d4d01bef5b83cfc29f91168bd4105ec4e9dd66bb0120ce56fd8e951ff6": {
-      "address": "0x162A433068F51e18b7d13932F27e66a3f99E6890",
-      "txHash": "0x519771da94134d3439ca442765e86329194e1d11df97fa54eca4ba3185642638",
+    "834e891ee190a55c451b875939a46a65084361d2077326f60408729eee629f41": {
+      "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
+      "txHash": "0xf7ec697308a486fc3fbcd55b7b13328a4c17cd1d648c49f6d2bf8dca671704cc",
       "layout": {
         "storage": [
           {
@@ -594,7 +599,7 @@
           {
             "contract": "AccessControlEnumerableUpgradeable",
             "label": "_roleMembers",
-            "type": "t_mapping(t_bytes32,t_struct(AddressSet)3225_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(AddressSet)3137_storage)",
             "src": "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol:22"
           },
           {
@@ -618,7 +623,7 @@
           {
             "contract": "ReaperBaseStrategyv1_1",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)6786_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6816_storage)dyn_storage",
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:27"
           },
           {
@@ -688,45 +693,54 @@
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:77"
           },
           {
-            "contract": "ReaperStrategyBeethovenWftmUnderlying",
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
             "label": "want",
             "type": "t_address",
-            "src": "contracts/ReaperStrategyBeethovenWftmUnderlying.sol:35"
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:37"
           },
           {
-            "contract": "ReaperStrategyBeethovenWftmUnderlying",
-            "label": "underlyings",
-            "type": "t_array(t_contract(IAsset)7603)dyn_storage",
-            "src": "contracts/ReaperStrategyBeethovenWftmUnderlying.sol:36"
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "label": "underlyingToLinear",
+            "type": "t_mapping(t_address,t_address)",
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:38"
           },
           {
-            "contract": "ReaperStrategyBeethovenWftmUnderlying",
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
             "label": "mcPoolId",
             "type": "t_uint256",
-            "src": "contracts/ReaperStrategyBeethovenWftmUnderlying.sol:47"
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:53"
           },
           {
-            "contract": "ReaperStrategyBeethovenWftmUnderlying",
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
             "label": "beetsPoolId",
             "type": "t_bytes32",
-            "src": "contracts/ReaperStrategyBeethovenWftmUnderlying.sol:48"
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:54"
           },
           {
-            "contract": "ReaperStrategyBeethovenWftmUnderlying",
-            "label": "wftmPosition",
-            "type": "t_uint256",
-            "src": "contracts/ReaperStrategyBeethovenWftmUnderlying.sol:49"
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "label": "beetsUnderlying",
+            "type": "t_bool",
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:55"
+          },
+          {
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "label": "wftmUnderlying",
+            "type": "t_bool",
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:56"
+          },
+          {
+            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "label": "usdcUnderlying",
+            "type": "t_bool",
+            "src": "contracts/ReaperStrategyBeethovenYearnBoosted.sol:57"
           }
         ],
         "types": {
           "t_address": {
             "label": "address"
           },
-          "t_array(t_contract(IAsset)7603)dyn_storage": {
-            "label": "contract IAsset[]"
-          },
-          "t_contract(IAsset)7603": {
-            "label": "contract IAsset"
+          "t_mapping(t_address,t_address)": {
+            "label": "mapping(address => address)"
           },
           "t_uint256": {
             "label": "uint256"
@@ -734,10 +748,13 @@
           "t_bytes32": {
             "label": "bytes32"
           },
-          "t_array(t_struct(Harvest)6786_storage)dyn_storage": {
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_array(t_struct(Harvest)6816_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest[]"
           },
-          "t_struct(Harvest)6786_storage": {
+          "t_struct(Harvest)6816_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest",
             "members": [
               {
@@ -750,25 +767,22 @@
               }
             ]
           },
-          "t_bool": {
-            "label": "bool"
-          },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]"
           },
-          "t_mapping(t_bytes32,t_struct(AddressSet)3225_storage)": {
+          "t_mapping(t_bytes32,t_struct(AddressSet)3137_storage)": {
             "label": "mapping(bytes32 => struct EnumerableSetUpgradeable.AddressSet)"
           },
-          "t_struct(AddressSet)3225_storage": {
+          "t_struct(AddressSet)3137_storage": {
             "label": "struct EnumerableSetUpgradeable.AddressSet",
             "members": [
               {
                 "label": "_inner",
-                "type": "t_struct(Set)2924_storage"
+                "type": "t_struct(Set)2836_storage"
               }
             ]
           },
-          "t_struct(Set)2924_storage": {
+          "t_struct(Set)2836_storage": {
             "label": "struct EnumerableSetUpgradeable.Set",
             "members": [
               {

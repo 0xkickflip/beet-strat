@@ -52,9 +52,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
-    bool public beetsUnderlying = false;
-    bool public wftmUnderlying = false;
-    bool public usdcUnderlying = false;
+    bool public beetsUnderlying;
+    bool public wftmUnderlying;
+    bool public usdcUnderlying;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -71,6 +71,10 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         want = _want;
         mcPoolId = _mcPoolId;
         beetsPoolId = IBasePool(want).getPoolId();
+
+        beetsUnderlying = false;
+        wftmUnderlying = false;
+        usdcUnderlying = false;
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
@@ -133,7 +137,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         } else if (wftmUnderlying) {
             _addLiquidity(WFTM);
         } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL);
+            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
             _addLiquidity(USDC);
         }
 
@@ -149,14 +153,15 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         uint256 wftmFee = 0;
 
         if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
+            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
             wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         } else {
             _swap(
                 BEETS,
                 WFTM,
                 (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-                WFTM_BEETS_POOL
+                WFTM_BEETS_POOL,
+                true
             );
             wftmFee = wftm.balanceOf(address(this));
         }
@@ -183,24 +188,30 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
             _underlying,
             underlyingToLinear[_underlying],
             IERC20Upgradeable(_underlying).balanceOf(address(this)),
-            ILinearPool(underlyingToLinear[_underlying]).getPoolId()
+            ILinearPool(underlyingToLinear[_underlying]).getPoolId(),
+            true
         );
         _swap(
             underlyingToLinear[_underlying],
             want,
             IERC20Upgradeable(underlyingToLinear[_underlying]).balanceOf(address(this)),
-            beetsPoolId
+            beetsPoolId,
+            false
         );
     }
 
     /**
      * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
+     *      Prior to requesting the swap, allowance is increased iff {_shouldIncreaseAllowance}
+     *      is true. This needs to false for the linear pool since they already have max allowance
+     *      for {BEET_VAULT}.
      */
     function _swap(
         address _from,
         address _to,
         uint256 _amount,
-        bytes32 _poolId
+        bytes32 _poolId,
+        bool _shouldIncreaseAllowance
     ) internal {
         if (_from == _to || _amount == 0) {
             return;
@@ -220,7 +231,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         funds.recipient = payable(address(this));
         funds.toInternalBalance = false;
 
-        IERC20Upgradeable(_from).safeIncreaseAllowance(BEET_VAULT, _amount);
+        if (_shouldIncreaseAllowance) {
+            IERC20Upgradeable(_from).safeIncreaseAllowance(BEET_VAULT, _amount);
+        }
         IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
     }
 
@@ -270,10 +283,10 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         if (beetsUnderlying) {
             _addLiquidity(BEETS);
         } else if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_BEETS_POOL);
+            _swap(BEETS, WFTM, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_BEETS_POOL, true);
             _addLiquidity(WFTM);
         } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL);
+            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
             _addLiquidity(USDC);
         }
 
