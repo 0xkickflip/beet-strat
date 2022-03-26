@@ -8,7 +8,7 @@
     },
     {
       "address": "0x5081a39b8A5f0E35a8D959395a630b68B74Dd30f",
-      "txHash": "0x04c06ae144214548a59168e36f5c26d8b269c8fda74609a18bb558d3d3b61ab5",
+      "txHash": "0xc7159135741de86a337b24163c98d8a26fadbc2d4484acf00302d1c1d29f4336",
       "kind": "uups"
     }
   ],
@@ -543,9 +543,9 @@
         }
       }
     },
-    "834e891ee190a55c451b875939a46a65084361d2077326f60408729eee629f41": {
+    "d5ec11d80a0d6cc76cdbaa4d3d7aa64eb6a240222ae361b4d77d0d2f504b803b": {
       "address": "0x922D6956C99E12DFeB3224DEA977D0939758A1Fe",
-      "txHash": "0xf7ec697308a486fc3fbcd55b7b13328a4c17cd1d648c49f6d2bf8dca671704cc",
+      "txHash": "0x82da39058b44d9bb88411ea65b7fde7505c057d244c80e4767c9a226bbee55ff",
       "layout": {
         "storage": [
           {
@@ -621,76 +621,76 @@
             "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:102"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)6816_storage)dyn_storage",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:27"
+            "type": "t_array(t_struct(Harvest)6781_storage)dyn_storage",
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:27"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "harvestLogCadence",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:28"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:28"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "lastHarvestTimestamp",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:29"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:29"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "upgradeProposalTime",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:31"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:31"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "treasury",
             "type": "t_address",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:45"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:45"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "vault",
             "type": "t_address",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:46"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:46"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "strategistRemitter",
             "type": "t_address",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:47"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:47"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "totalFee",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:73"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:73"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "callFee",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:74"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:74"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "treasuryFee",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:75"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:75"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "strategistFee",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:76"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:76"
           },
           {
-            "contract": "ReaperBaseStrategyv1_1",
+            "contract": "ReaperBaseStrategyv2",
             "label": "securityFee",
             "type": "t_uint256",
-            "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:77"
+            "src": "contracts/abstract/ReaperBaseStrategyv2.sol:77"
           },
           {
             "contract": "ReaperStrategyBeethovenYearnBoosted",
@@ -751,11 +751,11 @@
           "t_bool": {
             "label": "bool"
           },
-          "t_array(t_struct(Harvest)6816_storage)dyn_storage": {
-            "label": "struct ReaperBaseStrategyv1_1.Harvest[]"
+          "t_array(t_struct(Harvest)6781_storage)dyn_storage": {
+            "label": "struct ReaperBaseStrategyv2.Harvest[]"
           },
-          "t_struct(Harvest)6816_storage": {
-            "label": "struct ReaperBaseStrategyv1_1.Harvest",
+          "t_struct(Harvest)6781_storage": {
+            "label": "struct ReaperBaseStrategyv2.Harvest",
             "members": [
               {
                 "label": "timestamp",

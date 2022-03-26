@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-abstract contract ReaperBaseStrategyv1_1 is
+abstract contract ReaperBaseStrategyv2 is
     IStrategy,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable,
@@ -222,22 +222,19 @@ abstract contract ReaperBaseStrategyv1_1 is
 
     /**
      * @dev Pauses the strat. Deposits become disabled but users can still
-     *      withdraw. Removes allowances of external contracts.
+     *      withdraw.
      */
     function pause() public override {
         _onlyStrategistOrOwner();
         _pause();
-        _removeAllowances();
     }
 
     /**
      * @dev Unpauses the strat. Opens up deposits again and invokes deposit().
-     *      Reinstates allowances for external contracts.
      */
     function unpause() external override {
         _onlyStrategistOrOwner();
         _unpause();
-        _giveAllowances();
         deposit();
     }
 
@@ -404,16 +401,4 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      the vault.
      */
     function _reclaimWant() internal virtual;
-
-    /**
-     * @dev subclasses should add their custom logic to give allowances to external contracts
-     *      so the strategy can successfully interface with them.
-     */
-    function _giveAllowances() internal virtual;
-
-    /**
-     * @dev subclasses should add their custom logic to remove all allowances for any external
-     *      contracts.
-     */
-    function _removeAllowances() internal virtual;
 }

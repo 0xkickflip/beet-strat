@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-import "./abstract/ReaperBaseStrategyv1_1.sol";
+import "./abstract/ReaperBaseStrategyv2.sol";
 import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBeetVault.sol";
@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
  * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
  *      "tokens".
  */
-contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
+contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -94,8 +94,6 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
                 beetsUnderlying = true;
             }
         }
-
-        _giveAllowances();
     }
 
     /**
@@ -105,6 +103,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
     function _deposit() internal override {
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
+            IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
             IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
         }
     }
@@ -180,7 +179,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
 
     /**
      * @dev Core harvest function.
-     *      Converts underlying token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
+     *      Converts {_underlying} token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
      *      two swaps involving linear pools.
      */
     function _addLiquidity(address _underlying) internal {
@@ -283,7 +282,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
         if (beetsUnderlying) {
             _addLiquidity(BEETS);
         } else if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
             _addLiquidity(WFTM);
         } else if (usdcUnderlying) {
             _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
@@ -301,21 +300,5 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv1_1 {
      */
     function _reclaimWant() internal override {
         IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
-    }
-
-    /**
-     * @dev Gives all the necessary allowances to:
-     *      - deposit {want} into {MASTER_CHEF}
-     */
-    function _giveAllowances() internal override {
-        IERC20Upgradeable(want).safeApprove(MASTER_CHEF, 0);
-        IERC20Upgradeable(want).safeApprove(MASTER_CHEF, type(uint256).max);
-    }
-
-    /**
-     * @dev Removes all the allowances that were given above.
-     */
-    function _removeAllowances() internal override {
-        IERC20Upgradeable(want).safeApprove(MASTER_CHEF, 0);
     }
 }
