@@ -155,7 +155,6 @@ contract ReaperStrategy_bb_yv_FTMUSD is ReaperBaseStrategyv2 {
         request.userData = userData;
         request.fromInternalBalance = false;
 
-        IERC20Upgradeable(WFTM_LINEAR_BPT).safeIncreaseAllowance(BEET_VAULT, wftmLinearBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
