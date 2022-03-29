@@ -13,8 +13,18 @@ import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for Fantom of the Opera Yearn Boosted Beethoven-X pool.
+ * The strategy looks good overall so I don't have much to add.
+
+   “You know you are working on clean code when each routine you read turns out to be pretty much what you expected. 
+   You can call it beautiful code when the code also makes it look like the language was made for the problem.”
+
+   This is pretty much what I expected :).
  */
+
+/**
+ * @dev LP compounding strategy for Fantom of the Opera Yearn Boosted Beethoven-X pool.
+ * Could maybe avoid _ in names to make more human readable like ReaperStrategyFantomOfTheOperaBoosted
+ * But that is a very long name ...
 contract ReaperStrategy_bb_yv_FTMUSD is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
@@ -46,6 +56,8 @@ contract ReaperStrategy_bb_yv_FTMUSD is ReaperBaseStrategyv2 {
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {wftmLinearPosition} - Index of {WFTM_LINEAR_BPT} in the main pool.
+     *
+     * Are the constants not capitalized for some consistency/integration issue ?
      */
     uint256 public constant mcPoolId = 63;
     bytes32 public constant beetsPoolId = 0x64b301e21d640f9bef90458b0987d81fb4cf1b9e00020000000000000000022e;
@@ -186,6 +198,13 @@ contract ReaperStrategy_bb_yv_FTMUSD is ReaperBaseStrategyv2 {
         funds.toInternalBalance = false;
 
         IERC20Upgradeable(_from).safeIncreaseAllowance(BEET_VAULT, _amount);
+        /*
+        * Should the 'limit' here be 1 or do we want some kind of slippage protection?
+        * 1 means we allow any slippage to occur. It is generally not a problem with adequate
+        * liquidity but for example DEI-DEUS shows it can start making high slippage trades
+        * with no alerting. If harvests fail due to high slippage we could monitor and see this.
+        * This is a more general problem to all of our strategies so no need to address specifically here...
+        */
         IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
     }
 
