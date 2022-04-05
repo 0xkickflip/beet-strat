@@ -27,26 +27,31 @@ contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
      * @dev Tokens Used:
      * {WFTM} - Required for liquidity routing when doing swaps.
      * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {WSTA} - Part of want LP used to deposit into the LP pool
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant WSTA = address(0xCEeBDE49eC95E21F7eE63C5c6f98CaB3519570de);
     address public want;
     IAsset[] underlyings;
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
+    bytes32 public constant STATERA_BEETS_POOL = 0xc042ef6ca08576bdfb57d3055a7654344fd153e400010000000000000000003a;
 
     /**
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {beetsPosition} - Index of {BEETS} in the Beethoven-X pool
+     * {stateraPosition} - Index of {WSTA} in the Beethoven-X pool
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
     uint256 public beetsPosition;
+    uint256 public stateraPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -68,6 +73,8 @@ contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == BEETS) {
                 beetsPosition = i;
+            } else if (address(tokens[i]) == WSTA) {
+                stateraPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -103,12 +110,14 @@ contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
      *      1. Claims {BEETS} from the {MASTER_CHEF}.
      *      2. Claims fees for the harvest caller and treasury.
-     *      3. Joins {beetsPoolId} using remaining {BEETS}.
-     *      4. Deposits.
+     *      3. Swaps 80% of {BEETS} to {WSTA}
+     *      4. Joins {beetsPoolId} using remaining {BEETS} and {WSTA}.
+     *      5. Deposits.
      */
     function _harvestCore() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _chargeFees();
+        _swapToStatera();
         _joinPool();
         deposit();
     }
@@ -163,17 +172,29 @@ contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
     }
 
     /**
+     * @dev Core harvest function.
+     *      Swaps 80% of {BEETS} into {WSTA} to join the pool in proportion
+     */
+    function _swapToStatera() internal {
+        uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
+        uint256 beetsToSwap = beetsBal * 8000 / PERCENT_DIVISOR;
+        _swap(BEETS, WSTA, STATERA_BEETS_POOL, beetsToSwap);
+    }
+
+    /**
      * @dev Core harvest function. Joins {beetsPoolId} using {BEETS} balance;
      */
     function _joinPool() internal {
         uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        if (beetsBal == 0) {
+        uint256 wstaBal = IERC20Upgradeable(WSTA).balanceOf(address(this));
+        if (beetsBal == 0 && wstaBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
         amountsIn[beetsPosition] = beetsBal;
+        amountsIn[stateraPosition] = wstaBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -184,6 +205,7 @@ contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
         request.fromInternalBalance = false;
 
         IERC20Upgradeable(BEETS).safeIncreaseAllowance(BEET_VAULT, beetsBal);
+        IERC20Upgradeable(WSTA).safeIncreaseAllowance(BEET_VAULT, wstaBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
