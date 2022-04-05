@@ -27,11 +27,13 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
      * @dev Tokens Used:
      * {WFTM} - Required for liquidity routing when doing swaps.
      * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {LQDR} - Part of the LP used to join the pool
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant LQDR = address(0x10b620b2dbAC4Faa7D7FFD71Da486f5D44cd86f9);
     address public want;
     IAsset[] underlyings;
 
@@ -43,11 +45,11 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {wftmPosition} - Index of {WFTM} in the Beethoven-X pool
+     * {lqdrPosition} - Index of {LQDR} in the Beethoven-X pool
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
-    uint256 public wftmPosition;
+    uint256 public lqdrPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -67,8 +69,8 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == WFTM) {
-                wftmPosition = i;
+            if (address(tokens[i]) == LQDR) {
+                lqdrPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -105,32 +107,34 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
      *      1. Claims {BEETS} from the {MASTER_CHEF}.
      *      2. Swaps {BEETS} to {WFTM} using {WFTM_BEETS_POOL}.
      *      3. Claims fees for the harvest caller and treasury.
-     *      4. Joins {beetsPoolId} using remaining {WFTM}.
-     *      5. Deposits.
+     *      4. Swaps {WFTM} to {LQDR} using {WFTM_LQDR_POOL}.
+     *      5. Joins {beetsPoolId} using {LQDR}.
+     *      6. Deposits.
      */
     function _harvestCore() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _swapBeetsToWftm();
+        _swap(BEETS, WFTM, WFTM_BEETS_POOL);
         _chargeFees();
+        _swap(WFTM, LQDR, WFTM_LQDR_POOL);
         _joinPool();
         deposit();
     }
 
     /**
-     * @dev Core harvest function. Swaps {BEETS} to {WFTM} using {WFTM_BEETS_POOL}.
+     * @dev Core harvest function. Swaps {_from} to {_to} using {_poolId}.
      */
-    function _swapBeetsToWftm() internal {
-        uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        if (beetsBal == 0) {
+    function _swap(address _from, address _to, bytes32 _poolId) internal {
+        uint256 fromBal = IERC20Upgradeable(_from).balanceOf(address(this));
+        if (fromBal == 0) {
             return;
         }
 
         IBeetVault.SingleSwap memory singleSwap;
-        singleSwap.poolId = WFTM_BEETS_POOL;
+        singleSwap.poolId = _poolId;
         singleSwap.kind = IBeetVault.SwapKind.GIVEN_IN;
-        singleSwap.assetIn = IAsset(BEETS);
-        singleSwap.assetOut = IAsset(WFTM);
-        singleSwap.amount = beetsBal;
+        singleSwap.assetIn = IAsset(_from);
+        singleSwap.assetOut = IAsset(_to);
+        singleSwap.amount = fromBal;
         singleSwap.userData = abi.encode(0);
 
         IBeetVault.FundManagement memory funds;
@@ -139,7 +143,7 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
         funds.recipient = payable(address(this));
         funds.toInternalBalance = false;
 
-        IERC20Upgradeable(BEETS).safeIncreaseAllowance(BEET_VAULT, beetsBal);
+        IERC20Upgradeable(_from).safeIncreaseAllowance(BEET_VAULT, fromBal);
         IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
     }
 
@@ -163,17 +167,17 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
     }
 
     /**
-     * @dev Core harvest function. Joins {beetsPoolId} using {WFTM} balance;
+     * @dev Core harvest function. Joins {beetsPoolId} using {LQDR} balance;
      */
     function _joinPool() internal {
-        uint256 wftmBal = IERC20Upgradeable(WFTM).balanceOf(address(this));
-        if (wftmBal == 0) {
+        uint256 lqdrBal = IERC20Upgradeable(LQDR).balanceOf(address(this));
+        if (lqdrBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
-        amountsIn[wftmPosition] = wftmBal;
+        amountsIn[lqdrPosition] = lqdrBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -183,7 +187,7 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
         request.userData = userData;
         request.fromInternalBalance = false;
 
-        IERC20Upgradeable(WFTM).safeIncreaseAllowance(BEET_VAULT, wftmBal);
+        IERC20Upgradeable(LQDR).safeIncreaseAllowance(BEET_VAULT, lqdrBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
