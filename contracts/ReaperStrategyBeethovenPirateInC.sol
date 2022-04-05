@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 /**
  * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
  */
-contract ReaperStrategyBeethovenPiratesInC is ReaperBaseStrategyv1_1 {
+contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -37,6 +37,7 @@ contract ReaperStrategyBeethovenPiratesInC is ReaperBaseStrategyv1_1 {
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
+    bytes32 public constant WFTM_LQDR_POOL = 0x5e02ab5699549675a6d3beeb92a62782712d0509000200000000000000000138;
 
     /**
      * @dev Strategy variables
