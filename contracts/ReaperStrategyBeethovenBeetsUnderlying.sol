@@ -13,9 +13,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 /**
- * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
+ * @dev LP compounding strategy for Beethoven-X pools that have BEETS as one of the tokens.
  */
-contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
+contract ReaperStrategyBeethovenBeetsUnderlying is ReaperBaseStrategyv1_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
