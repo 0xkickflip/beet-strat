@@ -116,7 +116,7 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
         _swap(BEETS, WFTM, WFTM_BEETS_POOL);
         _chargeFees();
         _swap(WFTM, LQDR, WFTM_LQDR_POOL);
-        _joinPool();
+        _swap(LQDR, want, beetsPoolId);
         deposit();
     }
 
@@ -167,31 +167,6 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
     }
 
     /**
-     * @dev Core harvest function. Joins {beetsPoolId} using {LQDR} balance;
-     */
-    function _joinPool() internal {
-        uint256 lqdrBal = IERC20Upgradeable(LQDR).balanceOf(address(this));
-        if (lqdrBal == 0) {
-            return;
-        }
-
-        IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
-        uint256[] memory amountsIn = new uint256[](underlyings.length);
-        amountsIn[lqdrPosition] = lqdrBal;
-        uint256 minAmountOut = 1;
-        bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
-
-        IBeetVault.JoinPoolRequest memory request;
-        request.assets = underlyings;
-        request.maxAmountsIn = amountsIn;
-        request.userData = userData;
-        request.fromInternalBalance = false;
-
-        IERC20Upgradeable(LQDR).safeIncreaseAllowance(BEET_VAULT, lqdrBal);
-        IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
-    }
-
-    /**
      * @dev Function to calculate the total {want} held by the strat.
      *      It takes into account both the funds in hand, plus the funds in the MasterChef.
      */
@@ -234,7 +209,7 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _swap(BEETS, WFTM, WFTM_BEETS_POOL);
         _swap(WFTM, LQDR, WFTM_LQDR_POOL);
-        _joinPool();
+        _swap(LQDR, want, beetsPoolId);
 
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         if (poolBal != 0) {
