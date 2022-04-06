@@ -232,7 +232,8 @@ contract ReaperStrategyBeethovenPirateInC is ReaperBaseStrategyv1_1 {
      */
     function _retireStrat() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _swapBeetsToWftm();
+        _swap(BEETS, WFTM, WFTM_BEETS_POOL);
+        _swap(WFTM, LQDR, WFTM_LQDR_POOL);
         _joinPool();
 
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
