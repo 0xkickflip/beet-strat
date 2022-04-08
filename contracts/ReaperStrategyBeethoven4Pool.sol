@@ -8,20 +8,25 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
-import "./interfaces/IUniswapV2Router01.sol";
+import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/IBaseV1Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
  *      "tokens".
  */
-contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
+contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
     address public constant BEET_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
+    address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
+    address public constant SOLIDLY_ROUTER = 0xa38cd27185a464914D3046f0AB9d43356B34829D;
+    // address public fxsRouter;
 
     /**
      * @dev Tokens Used:
@@ -33,7 +38,10 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
+    address public constant UST = address(0x846e4D51d7E2043C1a87E0Ab7490B93FB940357b);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant FXS = address(0x7d016eec9c25232b01F23EF992D98ca97fc2AF5a);
+    address public constant FRAX = address(0xdc301622e621166BD8E82f2cA0A26c13Ad0BE355);
     address public want;
     mapping(address => address) public underlyingToLinear;
 
@@ -41,6 +49,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
     bytes32 public constant WFTM_USDC_POOL = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
+    bytes32 public constant WFTM_UST = 0x2fbb1ef03c02f9bb2bd6f8c8c24f8de347979d9e00010000000000000000039a;
 
     /**
      * @dev Strategy variables
@@ -78,8 +87,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
+            //console.log(address(tokens[i]));
             // skip {want} since that's also registered as a pool token
-            if (address(tokens[i]) == _want) {
+            if (address(tokens[i]) == _want || address(tokens[i]) == UST) {
                 continue;
             }
 
@@ -131,16 +141,43 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _chargeFees();
 
-        if (beetsUnderlying) {
-            _addLiquidity(BEETS);
-        } else if (wftmUnderlying) {
-            _addLiquidity(WFTM);
-        } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
-        }
+        // if (beetsUnderlying) {
+        //     _addLiquidity(BEETS);
+        // } else if (wftmUnderlying) {
+        //     _addLiquidity(WFTM);
+        // } else if (usdcUnderlying) {
+        //     _swapBeetx(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        //     _addLiquidity(USDC);
+        // }
 
-        deposit();
+        // deposit();
+    }
+
+    function _swapRewards() internal {
+        _swapFXS();
+        _swapUST();
+        _swapBEETS();
+    }
+
+    function _swapFXS() internal {
+        uint256 fxsBalance = IERC20Upgradeable(FXS).balanceOf(address(this));
+        address fxsRouter =  _findBestRouterForSwap(FXS, FRAX, fxsBalance);
+        _swap(FXS, FRAX, fxsBalance, fxsRouter);
+        uint256 fraxFee = IERC20Upgradeable(FRAX).balanceOf(address(this)) * totalFee / PERCENT_DIVISOR;
+        _swap(FRAX, WFTM, fraxFee, SPIRIT_ROUTER);
+    }
+
+    function _swapUST() internal {
+        // _swapBeetx(
+        // address _from,
+        // address _to,
+        // uint256 _amount,
+        // bytes32 _poolId,
+        // bool _shouldIncreaseAllowance
+    }
+
+    function _swapBEETS() internal {
+
     }
 
     /**
@@ -152,10 +189,10 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         uint256 wftmFee = 0;
 
         if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+            _swapBeetx(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
             wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         } else {
-            _swap(
+            _swapBeetx(
                 BEETS,
                 WFTM,
                 (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
@@ -183,14 +220,14 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      *      two swaps involving linear pools.
      */
     function _addLiquidity(address _underlying) internal {
-        _swap(
+        _swapBeetx(
             _underlying,
             underlyingToLinear[_underlying],
             IERC20Upgradeable(_underlying).balanceOf(address(this)),
             ILinearPool(underlyingToLinear[_underlying]).getPoolId(),
             true
         );
-        _swap(
+        _swapBeetx(
             underlyingToLinear[_underlying],
             want,
             IERC20Upgradeable(underlyingToLinear[_underlying]).balanceOf(address(this)),
@@ -199,13 +236,56 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         );
     }
 
+    function _swap(
+        address _from,
+        address _to,
+        uint256 _amount,
+        address routerAddress
+    ) internal {
+        if (_amount != 0) {
+            if (routerAddress == SOLIDLY_ROUTER) {
+                IBaseV1Router01 router = IBaseV1Router01(routerAddress);
+                (, bool stable) = router.getAmountOut(_amount, _from, _to);
+                router.swapExactTokensForTokensSimple(_amount, 0, _from, _to, stable, address(this), block.timestamp);
+            } else {
+                IUniswapV2Router02 router = IUniswapV2Router02(routerAddress);
+                address[] memory path = new address[](2);
+                path[0] = _from;
+                path[1] = _to;
+                router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
+                    _amount,
+                    0,
+                    path,
+                    address(this),
+                    block.timestamp
+                );
+            }
+        }
+    }
+
+    /** @dev Returns address of router that would return optimum output for _from->_to swap. */
+    function _findBestRouterForSwap(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal view returns (address) {
+        (uint256 fromSolid, ) = IBaseV1Router01(SOLIDLY_ROUTER).getAmountOut(_amount, _from, _to);
+
+        address[] memory path = new address[](2);
+        path[0] = _from;
+        path[1] = _to;
+        uint256 fromSpooky = IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(_amount, path)[1];
+
+        return fromSolid > fromSpooky ? SOLIDLY_ROUTER : SPOOKY_ROUTER;
+    }
+
     /**
      * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
      *      Prior to requesting the swap, allowance is increased iff {_shouldIncreaseAllowance}
      *      is true. This needs to false for the linear pool since they already have max allowance
      *      for {BEET_VAULT}.
      */
-    function _swap(
+    function _swapBeetx(
         address _from,
         address _to,
         uint256 _amount,
@@ -282,10 +362,10 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         if (beetsUnderlying) {
             _addLiquidity(BEETS);
         } else if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+            _swapBeetx(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
             _addLiquidity(WFTM);
         } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+            _swapBeetx(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
             _addLiquidity(USDC);
         }
 
