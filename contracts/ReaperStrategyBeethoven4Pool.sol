@@ -337,7 +337,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
             address[] memory beetsToWftmPath = new address[](2);
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
-            profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+            profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
         }
 
         (, uint256[] memory rewardAmounts) = rewarder.pendingTokens(mcPoolId, address(this), 0);
@@ -349,14 +349,14 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
             fxsToWftmPath[0] = FXS;
             fxsToWftmPath[1] = FRAX;
             fxsToWftmPath[2] = WFTM;
-            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(fxsAmount, fxsToWftmPath)[1];
+            profit += IUniswapV2Router02(SPIRIT_ROUTER).getAmountsOut(fxsAmount, fxsToWftmPath)[1];
         }
 
         if (ustAmount != 0) {
-            address[] memory ustToWftmPath = new address[](3);
+            address[] memory ustToWftmPath = new address[](2);
             ustToWftmPath[0] = UST;
             ustToWftmPath[1] = WFTM;
-            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(fxsAmount, ustToWftmPath)[1];
+            profit += IUniswapV2Router02(SPIRIT_ROUTER).getAmountsOut(ustAmount, ustToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));

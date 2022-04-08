@@ -210,7 +210,7 @@ describe('Vaults', function () {
       await strategy.harvest();
     });
 
-    it('should provide yield', async function () {
+    xit('should provide yield', async function () {
       const timeToSkip = 3600;
       const initialUserBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = initialUserBalance.div(10);
@@ -274,7 +274,7 @@ describe('Vaults', function () {
       await expect(strategy.retireStrat()).to.not.be.reverted;
     });
 
-    xit('should be able to estimate harvest', async function () {
+    it('should be able to estimate harvest', async function () {
       const whaleDepositAmount = toWantUnit('1000');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
