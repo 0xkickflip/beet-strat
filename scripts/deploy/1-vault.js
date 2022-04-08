@@ -3,7 +3,7 @@ async function main() {
 
   const wantAddress = '0x6Da14F5ACD58Dd5c8E486CFa1dC1c550F5c61C1c';
   const tokenName = 'My Beautiful Dark Twisted Decentralized Dollar BeethovenX Crypt';
-  const tokenSymbol = 'bb-yv-4pool';
+  const tokenSymbol = 'rf-bb-yv-4pool';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
