@@ -1,9 +1,9 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757';
-  const tokenName = 'Steady Beets, Yearn Boosted Beethoven-X Crypt';
-  const tokenSymbol = 'rf-bb-yv-USD';
+  const wantAddress = '0x6Da14F5ACD58Dd5c8E486CFa1dC1c550F5c61C1c';
+  const tokenName = 'My Beautiful Dark Twisted Decentralized Dollar BeethovenX Crypt';
+  const tokenSymbol = 'bb-yv-4pool';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
