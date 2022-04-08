@@ -10,6 +10,7 @@ import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IBaseV1Router01.sol";
+import "./interfaces/ITimeBasedMasterChefMultiTokenRewarder.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "hardhat/console.sol";
 
@@ -195,7 +196,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         }
     }
 
-    function _addLiquidity() {
+    function _addLiquidity() internal {
         _linearPoolSwap(FRAX);
         _linearPoolSwap(USDC);
         _swapBeetx(
@@ -325,6 +326,9 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        ITimeBasedMasterChefMultiTokenRewarder rewarder = ITimeBasedMasterChefMultiTokenRewarder(masterChef.rewarder(mcPoolId));
+
         uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
@@ -334,6 +338,25 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+        }
+
+        (, uint256[] memory rewardAmounts) = rewarder.pendingTokens(mcPoolId, address(this), 0);
+        uint256 fxsAmount = rewardAmounts[0];
+        uint256 ustAmount = rewardAmounts[1];
+
+        if (fxsAmount != 0) {
+            address[] memory fxsToWftmPath = new address[](3);
+            fxsToWftmPath[0] = FXS;
+            fxsToWftmPath[1] = FRAX;
+            fxsToWftmPath[2] = WFTM;
+            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(fxsAmount, fxsToWftmPath)[1];
+        }
+
+        if (ustAmount != 0) {
+            address[] memory ustToWftmPath = new address[](3);
+            ustToWftmPath[0] = UST;
+            ustToWftmPath[1] = WFTM;
+            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(fxsAmount, ustToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
