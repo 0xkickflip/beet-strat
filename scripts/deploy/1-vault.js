@@ -2,8 +2,8 @@ async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
   const wantAddress = '0x2fbb1EF03C02F9Bb2bD6f8C8c24F8dE347979d9e';
-  const tokenName = 'TOMB-MAI Tomb Crypt';
-  const tokenSymbol = 'rf-TOMB-MAI';
+  const tokenName = 'Clair De Lune BeethovenX Crypt';
+  const tokenSymbol = 'rf-BPT-LUNAUST';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
