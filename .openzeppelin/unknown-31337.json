@@ -3,14 +3,14 @@
   "proxies": [
     {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0xe01b06e9607497e176c46cc338a72f56133a25321460a0871f50a51f6a6821b8",
+      "txHash": "0xdbff3fb9955227553d63ec95e1555c0cebc2162de35226b0c48ff6fb99b3c90b",
       "kind": "uups"
     }
   ],
   "impls": {
-    "0a0351f2e1dbc58121421f6cf82a3881aa0269debc187e7690f27c3980636c9f": {
+    "d7aa7a65694002073072df316d29612ea1c576b7ea2c082ddbd1a300b858ce22": {
       "address": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02",
-      "txHash": "0x8a03ad369db172eb284dd744cb03180994d52871642d9cba8a0da36ea523927e",
+      "txHash": "0x7a87c56424a7206d34e313d51724c922ae3c20769d9ff8832113af042938c1fb",
       "layout": {
         "storage": [
           {
@@ -113,7 +113,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)7225_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)7122_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv2",
             "src": "contracts\\abstract\\ReaperBaseStrategyv2.sol:27"
           },
@@ -211,7 +211,7 @@
             "slot": "363",
             "type": "t_address",
             "contract": "ReaperStrategyBeethoven4Pool",
-            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:46"
+            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:49"
           },
           {
             "label": "underlyingToLinear",
@@ -219,7 +219,7 @@
             "slot": "364",
             "type": "t_mapping(t_address,t_address)",
             "contract": "ReaperStrategyBeethoven4Pool",
-            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:47"
+            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:50"
           },
           {
             "label": "mcPoolId",
@@ -236,30 +236,6 @@
             "type": "t_bytes32",
             "contract": "ReaperStrategyBeethoven4Pool",
             "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:64"
-          },
-          {
-            "label": "beetsUnderlying",
-            "offset": 0,
-            "slot": "367",
-            "type": "t_bool",
-            "contract": "ReaperStrategyBeethoven4Pool",
-            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:65"
-          },
-          {
-            "label": "wftmUnderlying",
-            "offset": 1,
-            "slot": "367",
-            "type": "t_bool",
-            "contract": "ReaperStrategyBeethoven4Pool",
-            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:66"
-          },
-          {
-            "label": "usdcUnderlying",
-            "offset": 2,
-            "slot": "367",
-            "type": "t_bool",
-            "contract": "ReaperStrategyBeethoven4Pool",
-            "src": "contracts\\ReaperStrategyBeethoven4Pool.sol:67"
           }
         ],
         "types": {
@@ -271,7 +247,7 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)7225_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)7122_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -323,7 +299,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)7225_storage": {
+          "t_struct(Harvest)7122_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest",
             "members": [
               {

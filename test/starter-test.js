@@ -54,7 +54,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 35559768,
+            blockNumber: 35567076,
           },
         },
       ],
@@ -210,8 +210,7 @@ describe('Vaults', function () {
       await strategy.harvest();
     });
 
-    xit('should provide yield', async function () {
-      const timeToSkip = 3600;
+    it('should provide yield', async function () {
       const initialUserBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = initialUserBalance.div(10);
 
@@ -227,14 +226,14 @@ describe('Vaults', function () {
       }
 
       const finalVaultBalance = await vault.balance();
-      // expect(finalVaultBalance).to.be.gt(initialVaultBalance);
+      expect(finalVaultBalance).to.be.gt(initialVaultBalance);
 
       const averageAPR = await strategy.averageAPRAcrossLastNHarvests(numHarvests);
       console.log(`Average APR across ${numHarvests} harvests is ${averageAPR} basis points.`);
     });
   });
   describe('Strategy', function () {
-    xit('should be able to pause and unpause', async function () {
+    it('should be able to pause and unpause', async function () {
       await strategy.pause();
       const depositAmount = toWantUnit('1');
       await expect(vault.connect(wantHolder).deposit(depositAmount)).to.be.reverted;
@@ -274,7 +273,7 @@ describe('Vaults', function () {
       await expect(strategy.retireStrat()).to.not.be.reverted;
     });
 
-    it('should be able to estimate harvest', async function () {
+    xit('should be able to estimate harvest', async function () {
       const whaleDepositAmount = toWantUnit('1000');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);

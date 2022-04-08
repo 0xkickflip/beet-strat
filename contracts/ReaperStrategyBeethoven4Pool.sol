@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "hardhat/console.sol";
 
 /**
- * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
+ * @dev LP compounding strategy for the Beethoven-X 4Pool that uses yearn-boosted linear pools as underlying
  *      "tokens".
  */
 contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
@@ -27,13 +27,15 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
     address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
     address public constant SOLIDLY_ROUTER = 0xa38cd27185a464914D3046f0AB9d43356B34829D;
-    // address public fxsRouter;
 
     /**
      * @dev Tokens Used:
      * {WFTM} - Required for charging fees. May also be used to join pool if there's {WFTM} underlying.
-     * {USDC} - May be used to join pool if there's {USDC} underlying.
-     * {BEETS} - Reward token for depositing LP into MasterChef. May also be used to join pool if there's {BEETS} underlying.
+     * {USDC} - Used to join pool.
+     * {UST} - Reward, also used to join pool.
+     * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {FXS} - Reward, converted into FRAX to join the pool
+     * {FRAX} - Used to join pool
      * {want} - LP token for the Beethoven-x pool.
      * {underlyingToLinear} - Map of underlying token to linear pool, example {USDC} -> {bb-yv-USDC}
      */
@@ -56,15 +58,9 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {beetsUnderlying} - Whether {BEETS} is an underlying token for one of the linear pools.
-     * {wftmUnderlying} - Whether {WFTM} is an underlying token for one of the linear pools.
-     * {usdcUnderlying} - Whether {USDC} is an underlying token for one of the linear pools.
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
-    bool public beetsUnderlying;
-    bool public wftmUnderlying;
-    bool public usdcUnderlying;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -82,28 +78,14 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         mcPoolId = _mcPoolId;
         beetsPoolId = IBasePool(want).getPoolId();
 
-        beetsUnderlying = false;
-        wftmUnderlying = false;
-        usdcUnderlying = false;
-
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            //console.log(address(tokens[i]));
-            // skip {want} since that's also registered as a pool token
             if (address(tokens[i]) == _want || address(tokens[i]) == UST) {
                 continue;
             }
 
             address underlying = ILinearPool(address(tokens[i])).getMainToken();
             underlyingToLinear[underlying] = address(tokens[i]);
-
-            if (underlying == WFTM) {
-                wftmUnderlying = true;
-            } else if (underlying == USDC) {
-                usdcUnderlying = true;
-            } else if (underlying == BEETS) {
-                beetsUnderlying = true;
-            }
         }
     }
 
@@ -134,8 +116,9 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
      *      1. It claims rewards from the masterChef.
-     *      2. It charges the system fees to simplify the split.
-     *      3. It swaps {BEEST} for {want}.
+     *      2. Swaps rewards into WFTM (for fees) and the underlying stablecoins (USDC, FRAX)
+     *      3. Charges fees from the WFTM balance
+     *      4. It swaps the underlying stablecoins in to the want tokens
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
@@ -196,6 +179,10 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         }
     }
 
+    /**
+     * @dev Core harvest function.
+     *      Swaps underlying stablecoins in to the want token
+     */
     function _addLiquidity() internal {
         _linearPoolSwap(FRAX);
         _linearPoolSwap(USDC);
@@ -210,7 +197,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
 
     /**
      * @dev Core harvest function.
-     *      Converts {_underlying} token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
+     *      Converts {_underlying} token (one of {USDC}, {FRAX} or {fUSDT}) to {want} using
      *      two swaps involving linear pools.
      */
     function _linearPoolSwap(address _underlying) internal {
@@ -377,15 +364,8 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
-        if (beetsUnderlying) {
-            _linearPoolSwap(BEETS);
-        } else if (wftmUnderlying) {
-            _swapBeetx(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            _linearPoolSwap(WFTM);
-        } else if (usdcUnderlying) {
-            _swapBeetx(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _linearPoolSwap(USDC);
-        }
+        _swapRewards();
+        _addLiquidity();
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
