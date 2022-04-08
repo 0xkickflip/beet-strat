@@ -141,17 +141,8 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         _claimRewards();
         _swapRewards();
         _chargeFees();
-
-        // if (beetsUnderlying) {
-        //     _addLiquidity(BEETS);
-        // } else if (wftmUnderlying) {
-        //     _addLiquidity(WFTM);
-        // } else if (usdcUnderlying) {
-        //     _swapBeetx(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-        //     _addLiquidity(USDC);
-        // }
-
-        // deposit();
+        _addLiquidity();
+        deposit();
     }
 
     function _claimRewards() internal {
@@ -204,12 +195,24 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         }
     }
 
+    function _addLiquidity() {
+        _linearPoolSwap(FRAX);
+        _linearPoolSwap(USDC);
+        _swapBeetx(
+            UST,
+            want,
+            IERC20Upgradeable(UST).balanceOf(address(this)),
+            beetsPoolId,
+            true
+        );
+    }
+
     /**
      * @dev Core harvest function.
      *      Converts {_underlying} token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
      *      two swaps involving linear pools.
      */
-    function _addLiquidity(address _underlying) internal {
+    function _linearPoolSwap(address _underlying) internal {
         _swapBeetx(
             _underlying,
             underlyingToLinear[_underlying],
@@ -352,13 +355,13 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
         if (beetsUnderlying) {
-            _addLiquidity(BEETS);
+            _linearPoolSwap(BEETS);
         } else if (wftmUnderlying) {
             _swapBeetx(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            _addLiquidity(WFTM);
+            _linearPoolSwap(WFTM);
         } else if (usdcUnderlying) {
             _swapBeetx(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
+            _linearPoolSwap(USDC);
         }
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
