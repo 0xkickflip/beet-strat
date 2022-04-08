@@ -49,7 +49,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
     bytes32 public constant WFTM_USDC_POOL = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
-    bytes32 public constant WFTM_UST = 0x2fbb1ef03c02f9bb2bd6f8c8c24f8de347979d9e00010000000000000000039a;
+    bytes32 public constant WFTM_UST_POOL = 0x2fbb1ef03c02f9bb2bd6f8c8c24f8de347979d9e00010000000000000000039a;
 
     /**
      * @dev Strategy variables
@@ -138,7 +138,8 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
-        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
+        _claimRewards();
+        _swapRewards();
         _chargeFees();
 
         // if (beetsUnderlying) {
@@ -151,6 +152,10 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         // }
 
         // deposit();
+    }
+
+    function _claimRewards() internal {
+        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
     }
 
     function _swapRewards() internal {
@@ -168,16 +173,15 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
     }
 
     function _swapUST() internal {
-        // _swapBeetx(
-        // address _from,
-        // address _to,
-        // uint256 _amount,
-        // bytes32 _poolId,
-        // bool _shouldIncreaseAllowance
+        uint256 ustFee = IERC20Upgradeable(UST).balanceOf(address(this)) * totalFee / PERCENT_DIVISOR;
+        _swapBeetx(UST, WFTM, ustFee, WFTM_UST_POOL, true);
     }
 
     function _swapBEETS() internal {
-
+        uint256 beetsFee = IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee / PERCENT_DIVISOR;
+        _swapBeetx(BEETS, WFTM, beetsFee, WFTM_BEETS_POOL, true);
+        uint256 beetsBalance = IERC20Upgradeable(BEETS).balanceOf(address(this));
+        _swapBeetx(BEETS, USDC, beetsBalance, USDC_BEETS_POOL, true);
     }
 
     /**
@@ -186,21 +190,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
      */
     function _chargeFees() internal {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = 0;
-
-        if (wftmUnderlying) {
-            _swapBeetx(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        } else {
-            _swapBeetx(
-                BEETS,
-                WFTM,
-                (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-                WFTM_BEETS_POOL,
-                true
-            );
-            wftmFee = wftm.balanceOf(address(this));
-        }
+        uint256 wftmFee = wftm.balanceOf(address(this));
 
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
@@ -243,6 +233,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         address routerAddress
     ) internal {
         if (_amount != 0) {
+            IERC20Upgradeable(_from).safeIncreaseAllowance(routerAddress, _amount);
             if (routerAddress == SOLIDLY_ROUTER) {
                 IBaseV1Router01 router = IBaseV1Router01(routerAddress);
                 (, bool stable) = router.getAmountOut(_amount, _from, _to);
@@ -252,6 +243,7 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
                 address[] memory path = new address[](2);
                 path[0] = _from;
                 path[1] = _to;
+                
                 router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                     _amount,
                     0,
@@ -274,9 +266,9 @@ contract ReaperStrategyBeethoven4Pool is ReaperBaseStrategyv2 {
         address[] memory path = new address[](2);
         path[0] = _from;
         path[1] = _to;
-        uint256 fromSpooky = IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(_amount, path)[1];
+        uint256 fromSpooky = IUniswapV2Router02(SPIRIT_ROUTER).getAmountsOut(_amount, path)[1];
 
-        return fromSolid > fromSpooky ? SOLIDLY_ROUTER : SPOOKY_ROUTER;
+        return fromSolid > fromSpooky ? SOLIDLY_ROUTER : SPIRIT_ROUTER;
     }
 
     /**
