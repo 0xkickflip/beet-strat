@@ -1,9 +1,9 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0x1b1d74A1Ab76338653E3AAaE79634D6A153d6514';
-  const tokenName = 'Stable Credit Sonata Beethoven-X Crypt';
-  const tokenSymbol = 'rf-BPT-CREDIT';
+  const wantAddress = '0x3bd4c3d1f6F40d77B2e9d0007D6f76E4F183A46d';
+  const tokenName = 'A Beefy Tale Of Two Fantom Sisters Beethoven-X Crypt';
+  const tokenSymbol = 'rf-BPT_beFTM';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
