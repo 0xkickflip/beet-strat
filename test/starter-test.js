@@ -1,16 +1,16 @@
 const hre = require('hardhat');
 const chai = require('chai');
-const { solidity } = require('ethereum-waffle');
+const {solidity} = require('ethereum-waffle');
 chai.use(solidity);
-const { expect } = chai;
+const {expect} = chai;
 
-const moveTimeForward = async seconds => {
+const moveTimeForward = async (seconds) => {
   await network.provider.send('evm_increaseTime', [seconds]);
   await network.provider.send('evm_mine');
 };
 
 // use with small values in case harvest is block-dependent instead of time-dependent
-const moveBlocksForward = async blocks => {
+const moveBlocksForward = async (blocks) => {
   for (let i = 0; i < blocks; i++) {
     await network.provider.send('evm_increaseTime', [1]);
     await network.provider.send('evm_mine');
@@ -33,15 +33,15 @@ describe('Vaults', function () {
 
   let Want;
   let want;
-  
+
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757';
-  const mcPoolId = 41;
+  const wantAddress = '0x302B8b64795b064CAdC32f74993A637249860807';
+  const mcPoolId = 74;
 
-  const wantHolderAddr = '0x0eA6e8aFf39F2B8aFd0447f2CB78D60b1B7FBD94';
+  const wantHolderAddr = '0x5a6e9ba01afdcec6bbf20d02493047fa8ccb5b98';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
-  
+
   let owner;
   let wantHolder;
   let strategist;
@@ -54,12 +54,12 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 34385092,
+            blockNumber: 35635168,
           },
         },
       ],
     });
-    
+
     //get signers
     [owner] = await ethers.getSigners();
     await hre.network.provider.request({
@@ -89,7 +89,7 @@ describe('Vaults', function () {
     strategy = await hre.upgrades.deployProxy(
       Strategy,
       [vault.address, [treasuryAddr, paymentSplitterAddress], [strategistAddr], wantAddress, mcPoolId],
-      { kind: 'uups' },
+      {kind: 'uups'},
     );
     await strategy.deployed();
     await vault.initialize(strategy.address);
@@ -108,52 +108,6 @@ describe('Vaults', function () {
       expect(availableBalance).to.equal(0);
       expect(pricePerFullShare).to.equal(ethers.utils.parseEther('1'));
     });
-
-    // Upgrade tests are ok to skip IFF no changes to BaseStrategy are made
-    xit('should not allow implementation upgrades without initiating cooldown', async function () {
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV2');
-      await expect(hre.upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.revertedWith(
-        'cooldown not initiated or still active',
-      );
-    });
-
-    xit('should not allow implementation upgrades before timelock has passed', async function () {
-      await strategy.initiateUpgradeCooldown();
-
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV3');
-      await expect(hre.upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.revertedWith(
-        'cooldown not initiated or still active',
-      );
-    });
-
-    xit('should allow implementation upgrades once timelock has passed', async function () {
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV2');
-      const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
-      await strategy.initiateUpgradeCooldown();
-      await moveTimeForward(timeToSkip.toNumber());
-      await hre.upgrades.upgradeProxy(strategy.address, StrategyV2);
-    });
-
-    xit('successive upgrades need to initiate timelock again', async function () {
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV2');
-      const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
-      await strategy.initiateUpgradeCooldown();
-      await moveTimeForward(timeToSkip.toNumber());
-      await hre.upgrades.upgradeProxy(strategy.address, StrategyV2);
-
-      const StrategyV3 = await ethers.getContractFactory('TestReaperStrategyTombMaiV3');
-      await expect(hre.upgrades.upgradeProxy(strategy.address, StrategyV3)).to.be.revertedWith(
-        'cooldown not initiated or still active',
-      );
-
-      await strategy.initiateUpgradeCooldown();
-      await expect(hre.upgrades.upgradeProxy(strategy.address, StrategyV3)).to.be.revertedWith(
-        'cooldown not initiated or still active',
-      );
-
-      await moveTimeForward(timeToSkip.toNumber());
-      await hre.upgrades.upgradeProxy(strategy.address, StrategyV3);
-    });
   });
 
   describe('Vault Tests', function () {
@@ -162,7 +116,7 @@ describe('Vaults', function () {
       const vaultBalance = await vault.balance();
       const depositAmount = toWantUnit('10');
       await vault.connect(wantHolder).deposit(depositAmount);
-      
+
       const newVaultBalance = await vault.balance();
       const newUserBalance = await want.balanceOf(wantHolderAddr);
       const allowedInaccuracy = depositAmount.div(200);
@@ -201,7 +155,7 @@ describe('Vaults', function () {
       await vault.connect(wantHolder).withdrawAll();
       const newUserVaultBalance = await vault.balanceOf(wantHolderAddr);
       const userBalanceAfterWithdraw = await want.balanceOf(wantHolderAddr);
-      
+
       const securityFee = 10;
       const percentDivisor = 10000;
       const withdrawFee = depositAmount.mul(securityFee).div(percentDivisor);
@@ -238,7 +192,6 @@ describe('Vaults', function () {
       const userBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = toWantUnit('0.0000000000001');
       await vault.connect(wantHolder).deposit(depositAmount);
-
 
       await vault.connect(wantHolder).withdraw(depositAmount);
       const newUserVaultBalance = await vault.balanceOf(wantHolderAddr);
