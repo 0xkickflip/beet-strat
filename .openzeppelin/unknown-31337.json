@@ -550,7 +550,7 @@
     },
     "b1d5439faca0dce2af9a9f6a26cea6259f14c0cd2e5cc51358e3a518a1e37e46": {
       "address": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02",
-      "txHash": "0x02fbac2cedacec7659deae284ac7435dc2bb1dfef492632c717f94f8b41032eb",
+      "txHash": "0x4045c7f81dfa11169ade07f793635aff76d6f9214d6d9b8485a751dfbc4039bf",
       "layout": {
         "storage": [
           {
@@ -750,7 +750,7 @@
             "offset": 0,
             "slot": "363",
             "type": "t_address",
-            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "contract": "ReaperStrategyBeethovenOvertureGrim",
             "src": "contracts\\ReaperStrategyBeethovenYearnBoosted.sol:41"
           },
           {
@@ -758,7 +758,7 @@
             "offset": 0,
             "slot": "364",
             "type": "t_array(t_contract(IAsset)7530)dyn_storage",
-            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "contract": "ReaperStrategyBeethovenOvertureGrim",
             "src": "contracts\\ReaperStrategyBeethovenYearnBoosted.sol:42"
           },
           {
@@ -766,7 +766,7 @@
             "offset": 0,
             "slot": "365",
             "type": "t_uint256",
-            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "contract": "ReaperStrategyBeethovenOvertureGrim",
             "src": "contracts\\ReaperStrategyBeethovenYearnBoosted.sol:55"
           },
           {
@@ -774,7 +774,7 @@
             "offset": 0,
             "slot": "366",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "contract": "ReaperStrategyBeethovenOvertureGrim",
             "src": "contracts\\ReaperStrategyBeethovenYearnBoosted.sol:56"
           },
           {
@@ -782,7 +782,7 @@
             "offset": 0,
             "slot": "367",
             "type": "t_uint256",
-            "contract": "ReaperStrategyBeethovenYearnBoosted",
+            "contract": "ReaperStrategyBeethovenOvertureGrim",
             "src": "contracts\\ReaperStrategyBeethovenYearnBoosted.sol:57"
           }
         ],
