@@ -1,6 +1,6 @@
 async function main() {
-  const vaultAddress = '0x56607b9AB2aB1783bCb8D8F62135c4EA11655A4C';
-  const strategyAddress = '0xf733c7D08e58337eE4483417a7C46e080D9e5D10';
+  const vaultAddress = '0xd0945276c20a3eC47449DEc6816b921E00342d97';
+  const strategyAddress = '0xef6D65a2fb2d8130A06B89CF424FC06Ec9C45A95';
 
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
   const vault = Vault.attach(vaultAddress);
