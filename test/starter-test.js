@@ -36,10 +36,10 @@ describe('Vaults', function () {
 
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x3bd4c3d1f6F40d77B2e9d0007D6f76E4F183A46d';
-  const mcPoolId = 61;
+  const wantAddress = '0x71d159Ee565912009C80d1dF2053921C6a5E7732';
+  const mcPoolId = 55;
 
-  const wantHolderAddr = '0xf28570694a6c9cd0494955966ae75af61abf5a07';
+  const wantHolderAddr = '0x417466cbae627485b2a39803966764ad6fa22d9f';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   let owner;
@@ -54,7 +54,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 35643885,
+            blockNumber: 35701617,
           },
         },
       ],

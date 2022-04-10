@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = '0xcb40625713F76356E2B8C8862dbD01c22Fa1C53B';
+  const vaultAddress = '0x56607b9AB2aB1783bCb8D8F62135c4EA11655A4C';
 
   const Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenWftmUnderlying');
   const treasuryAddress = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
@@ -9,8 +9,8 @@ async function main() {
   const strategist1 = '0x1E71AEE6081f62053123140aacC7a06021D77348';
   const strategist2 = '0x81876677843D00a7D792E1617459aC2E93202576';
   const strategist3 = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
-  const wantAddress = '0x3bd4c3d1f6F40d77B2e9d0007D6f76E4F183A46d';
-  const mcPoolId = 61;
+  const wantAddress = '0x71d159Ee565912009C80d1dF2053921C6a5E7732';
+  const mcPoolId = 55;
 
   const strategy = await hre.upgrades.deployProxy(
     Strategy,
