@@ -106,7 +106,7 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
      *      1. Claims {DEUS} and {BEETS} from the {MASTER_CHEF}.
-     *      2. Uses totalFee% of {BEETS} and all of {BEETS} to swap to {WFTM} and charge fees.
+     *      2. Uses totalFee% of {DEUS} and all of {BEETS} to swap to {WFTM} and charge fees.
      *      3. Swaps any leftover {WFTM} to {DEUS}.
      *      4. Joins {beetsPoolId} using {DEUS}.
      *      5. Deposits.
