@@ -37,10 +37,10 @@ describe('Vaults', function () {
   
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x8B858Eaf095A7337dE6f9bC212993338773cA34e';
-  const mcPoolId = 67;
+  const wantAddress = '0x0e8e7307E43301CF28c5d21d5fD3EF0876217D41';
+  const mcPoolId = 76;
 
-  const wantHolderAddr = '0x83b285e802d76055169b1c5e3bf21702b85b89cb';
+  const wantHolderAddr = '0x904BeccBDDE4436696f14d846008818495AA616c';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   const beetsAddress = '0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e';
@@ -59,7 +59,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 34128403,
+            blockNumber: 35973433,
           },
         },
       ],
@@ -85,14 +85,14 @@ describe('Vaults', function () {
 
     //get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyGodBetweenTwoStables');
+    Strategy = await ethers.getContractFactory('ReaperStrategyTwoGodsOnePool');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     //deploy contracts
     vault = await Vault.deploy(
       wantAddress,
-      'One God Between Two Stables Beethoven-X Crypt',
-      'rfBPT-DEIUSDC',
+      'Two Gods One Pool Beethoven-X Crypt',
+      'rfBPT-GOD',
       0,
       ethers.constants.MaxUint256,
     );
@@ -205,7 +205,7 @@ describe('Vaults', function () {
 
     it('should allow withdrawals', async function () {
       const userBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = toWantUnit('100');
+      const depositAmount = toWantUnit('10');
       await vault.connect(wantHolder).deposit(depositAmount);
 
       await vault.connect(wantHolder).withdrawAll();
@@ -263,17 +263,14 @@ describe('Vaults', function () {
     });
 
     it('should be able to harvest', async function () {
-      await vault.connect(wantHolder).deposit(toWantUnit('1000'));
+      await vault.connect(wantHolder).deposit(toWantUnit('35'));
       await moveBlocksForward(100);
       await strategy.harvest();
     });
 
     it('should provide yield', async function () {
       const timeToSkip = 3600;
-      const initialUserBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = initialUserBalance.div(10);
-
-      await vault.connect(wantHolder).deposit(depositAmount);
+      await vault.connect(wantHolder).deposit(toWantUnit('35'));
       const initialVaultBalance = await vault.balance();
 
       await strategy.updateHarvestLogCadence(1);
@@ -316,7 +313,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to retire strategy', async function () {
-      const depositAmount = toWantUnit('1000');
+      const depositAmount = toWantUnit('10');
       await vault.connect(wantHolder).deposit(depositAmount);
       await moveBlocksForward(100);
       const vaultBalance = await vault.balance();
@@ -338,7 +335,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to estimate harvest', async function () {
-      const whaleDepositAmount = toWantUnit('1000');
+      const whaleDepositAmount = toWantUnit('10');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
       await strategy.harvest();

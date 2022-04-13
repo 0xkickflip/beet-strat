@@ -5,7 +5,6 @@ pragma solidity ^0.8.0;
 import "./abstract/ReaperBaseStrategyv1_1.sol";
 import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
-import "./interfaces/IBaseV1Router01.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IDeusRewarder.sol";
@@ -25,7 +24,6 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
     address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
-    address public constant SOLIDLY_ROUTER = address(0xa38cd27185a464914D3046f0AB9d43356B34829D);
 
     /**
      * @dev Tokens Used:
@@ -198,16 +196,13 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
             return;
         }
 
-        IERC20Upgradeable(_from).safeIncreaseAllowance(_router, _amount);
-        if (_router == SOLIDLY_ROUTER) {
-            IBaseV1Router01 router = IBaseV1Router01(_router);
-            (, bool stable) = router.getAmountOut(_amount, _from, _to);
-            router.swapExactTokensForTokensSimple(_amount, 0, _from, _to, stable, address(this), block.timestamp);
-        } else {
-            IUniswapV2Router02 router = IUniswapV2Router02(_router);
-            address[] memory path = new address[](2);
-            path[0] = _from;
-            path[1] = _to;
+        IUniswapV2Router02 router = IUniswapV2Router02(_router);
+        address[] memory path = new address[](2);
+        path[0] = _from;
+        path[1] = _to;
+
+        if (router.getAmountsOut(_amount, path)[1] != 0) {
+            IERC20Upgradeable(_from).safeIncreaseAllowance(_router, _amount);
             router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
                 _amount,
                 0,
