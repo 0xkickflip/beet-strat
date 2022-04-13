@@ -278,7 +278,7 @@ describe('Vaults', function () {
       const numHarvests = 5;
       beets = Want.attach(beetsAddress);
       for (let i = 0; i < numHarvests; i++) {
-        await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
+        // await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
         await moveBlocksForward(100);
         await strategy.harvest();
       }
