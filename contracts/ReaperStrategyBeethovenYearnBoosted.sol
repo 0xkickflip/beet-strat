@@ -13,10 +13,9 @@ import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
- *      "tokens".
+ * @dev LP compounding strategy for A Late Quartet, Yearn Boosted on Beethoven-X.
  */
-contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
+contract ReaperStrategyBeethovenLateQuartet is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
