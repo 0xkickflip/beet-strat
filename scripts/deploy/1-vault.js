@@ -6,8 +6,9 @@ async function main() {
   const tokenSymbol = 'rf-BPT-CRE8R-F';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
+  const options = {gasPrice: 1100000000000, gasLimit: 9000000};
 
-  const vault = await Vault.deploy(wantAddress, tokenName, tokenSymbol, depositFee, tvlCap);
+  const vault = await Vault.deploy(wantAddress, tokenName, tokenSymbol, depositFee, tvlCap, options);
 
   await vault.deployed();
   console.log('Vault deployed to:', vault.address);
