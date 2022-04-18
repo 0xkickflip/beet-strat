@@ -9,6 +9,7 @@ import "./interfaces/IBeetVault.sol";
 import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router02.sol";
+import "./interfaces/IBaseWeightedPool.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 import "hardhat/console.sol";
@@ -40,12 +41,14 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
     address public constant DEI = address(0xDE12c7959E1a72bbe8a5f7A1dc8f8EeF9Ab011B3);
     address public constant BB_YV_USD = address(0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757);
     address public want;
+    IAsset[] underlyings;
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
     bytes32 public constant DEI_DEUS_POOL = 0x0e8e7307e43301cf28c5d21d5fd3ef0876217d410002000000000000000003f1;
-    bytes32 public constant BB_YV_USD_POOL = 0x3b998ba87b11a1c5bc1770de9793b17a0da61561000000000000000000000185;
+    bytes32 public constant BB_YV_USDC_POOL = 0x3b998ba87b11a1c5bc1770de9793b17a0da61561000000000000000000000185;
+    bytes32 public constant BB_YV_USD_POOL = 0x5ddb92a5340fd0ead3987d3661afcd6104c3b757000000000000000000000187;
 
     /**
      * @dev Strategy variables
@@ -70,6 +73,15 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
         want = _want;
         mcPoolId = _mcPoolId;
         beetsPoolId = IBasePool(want).getPoolId();
+
+        (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (address(tokens[i]) == BB_YV_USD) {
+                console.log(i);
+            }
+
+            underlyings.push(IAsset(address(tokens[i])));
+        }
     }
 
     /**
@@ -189,18 +201,53 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
         );
         _beethovenSwap(
             USDC,
-            BB_YV_USD,
+            address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561),
             IERC20Upgradeable(USDC).balanceOf(address(this)),
-            BB_YV_USD_POOL,
+            BB_YV_USDC_POOL,
             true
         );
         _beethovenSwap(
+            address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561),
             BB_YV_USD,
-            want,
-            IERC20Upgradeable(BB_YV_USD).balanceOf(address(this)),
-            beetsPoolId,
+            IERC20Upgradeable(address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561)).balanceOf(address(this)),
+            BB_YV_USD_POOL,
             false
         );
+        // _beethovenSwap(
+        //     BB_YV_USD,
+        //     want,
+        //     IERC20Upgradeable(BB_YV_USD).balanceOf(address(this)),
+        //     beetsPoolId,
+        //     false
+        // );
+        _joinPool();
+    }
+
+    /**
+     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} balance;
+     */
+    function _joinPool() internal {
+        console.log("_joinPool()");
+        uint256 bb_yv_USDBal = IERC20Upgradeable(BB_YV_USD).balanceOf(address(this));
+        console.log("bb_yv_USDBal: ", bb_yv_USDBal);
+        if (bb_yv_USDBal == 0) {
+            return;
+        }
+
+        IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
+        uint256[] memory amountsIn = new uint256[](underlyings.length);
+        amountsIn[0] = bb_yv_USDBal;
+        uint256 minAmountOut = 1;
+        bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
+
+        IBeetVault.JoinPoolRequest memory request;
+        request.assets = underlyings;
+        request.maxAmountsIn = amountsIn;
+        request.userData = userData;
+        request.fromInternalBalance = false;
+
+        // IERC20Upgradeable(USDC).safeIncreaseAllowance(BEET_VAULT, usdcBal);
+        IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
     /**

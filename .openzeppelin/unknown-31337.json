@@ -13,7 +13,7 @@
     },
     {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0xe632d98a95a6f93993fbb1861b41d7a9a21eae8f3d06a6483d87c09c2ce90710",
+      "txHash": "0x7357e1676a80ea451796705c8508a9ae4368dd24d7fc4554120b79511ff09943",
       "kind": "uups"
     }
   ],
@@ -831,9 +831,9 @@
         }
       }
     },
-    "b2071dcce9382d53cf197acc026eef9590cd259a9aba7d4e8f0b5ce416c992ff": {
+    "f146bac79f99a37bc9f32675dc95d1d301cf425de0d0ed64436cae0cc18ea272": {
       "address": "0x51A1ceB83B83F1985a81C295d1fF28Afef186E02",
-      "txHash": "0xd27a46bc5ba2c933983a7ce96e8cdbdd5007c4dd96a684bd8030346fbd6591bf",
+      "txHash": "0x150d7690c760b8376e9b73e52c9fcdcea5d05878c369779d3bbedbd1f23dee30",
       "layout": {
         "storage": [
           {
@@ -936,7 +936,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)6759_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6955_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv2",
             "src": "contracts\\abstract\\ReaperBaseStrategyv2.sol:27"
           },
@@ -1034,23 +1034,31 @@
             "slot": "363",
             "type": "t_address",
             "contract": "ReaperStrategyBeethovenFromGods",
-            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:42"
+            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:43"
+          },
+          {
+            "label": "underlyings",
+            "offset": 0,
+            "slot": "364",
+            "type": "t_array(t_contract(IAsset)7758)dyn_storage",
+            "contract": "ReaperStrategyBeethovenFromGods",
+            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:44"
           },
           {
             "label": "mcPoolId",
             "offset": 0,
-            "slot": "364",
+            "slot": "365",
             "type": "t_uint256",
             "contract": "ReaperStrategyBeethovenFromGods",
-            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:55"
+            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:58"
           },
           {
             "label": "beetsPoolId",
             "offset": 0,
-            "slot": "365",
+            "slot": "366",
             "type": "t_bytes32",
             "contract": "ReaperStrategyBeethovenFromGods",
-            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:56"
+            "src": "contracts\\ReaperStrategyBeethovenFromGods.sol:59"
           }
         ],
         "types": {
@@ -1062,7 +1070,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)6759_storage)dyn_storage": {
+          "t_array(t_contract(IAsset)7758)dyn_storage": {
+            "label": "contract IAsset[]",
+            "numberOfBytes": "32"
+          },
+          "t_array(t_struct(Harvest)6955_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -1081,6 +1093,10 @@
           "t_bytes32": {
             "label": "bytes32",
             "numberOfBytes": "32"
+          },
+          "t_contract(IAsset)7758": {
+            "label": "contract IAsset",
+            "numberOfBytes": "20"
           },
           "t_mapping(t_address,t_bool)": {
             "label": "mapping(address => bool)",
@@ -1110,7 +1126,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)6759_storage": {
+          "t_struct(Harvest)6955_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest",
             "members": [
               {
