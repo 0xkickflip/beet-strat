@@ -11,6 +11,8 @@ import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @dev LP compounding strategy for the From Gods, Boosted And Blessed Beethoven-X pool.
  */
@@ -43,7 +45,7 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
     bytes32 public constant DEI_DEUS_POOL = 0x0e8e7307e43301cf28c5d21d5fd3ef0876217d410002000000000000000003f1;
-    bytes32 public constant BB_YV_USD_POOL = 0x5ddb92a5340fd0ead3987d3661afcd6104c3b757000000000000000000000187;
+    bytes32 public constant BB_YV_USD_POOL = 0x3b998ba87b11a1c5bc1770de9793b17a0da61561000000000000000000000185;
 
     /**
      * @dev Strategy variables
@@ -102,10 +104,16 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
+        console.log("----------------------------------------------");
+        console.log("_harvestCore()");
+        uint256 wantBal = IERC20Upgradeable(want).balanceOf(address(this));
+        console.log("wantBal before: ", wantBal);
         _claimRewards();
         _performSwapsAndChargeFees();
         _addLiquidity();
         deposit();
+        wantBal = IERC20Upgradeable(want).balanceOf(address(this));
+        console.log("wantBal after: ", wantBal);
     }
 
     function _claimRewards() internal {
@@ -117,6 +125,11 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
      *      Charges fees based on the amount of WFTM gained from reward
      */
     function _performSwapsAndChargeFees() internal {
+        console.log("_performSwapsAndChargeFees()");
+        uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
+        uint256 deusBal = IERC20Upgradeable(DEUS).balanceOf(address(this));
+        console.log("beetsBal: ", beetsBal);
+        console.log("deusBal: ", deusBal);
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 startingWftmBal = wftm.balanceOf(address(this));
         uint256 wftmFee = 0;
@@ -130,8 +143,8 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
         wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
         startingWftmBal = wftm.balanceOf(address(this));
 
-        _beethovenSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-        wftmFee += ((wftm.balanceOf(address(this)) - startingWftmBal) * totalFee) / PERCENT_DIVISOR;
+        _beethovenSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee / PERCENT_DIVISOR, WFTM_BEETS_POOL, true);
+        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
 
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
@@ -150,22 +163,23 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
+        console.log("_addLiquidity()");
         // DEUS -> DEI -> want
-        _beethovenSwap(
-            DEUS,
-            DEI,
-            IERC20Upgradeable(DEUS).balanceOf(address(this)),
-            DEI_DEUS_POOL,
-            true
-        );
-        _beethovenSwap(
-            DEI,
-            want,
-            IERC20Upgradeable(DEI).balanceOf(address(this)),
-            beetsPoolId,
-            true
-        );
-        // BEETS -> USDC -> bb-yv-USD -> want
+        // _beethovenSwap(
+        //     DEUS,
+        //     DEI,
+        //     IERC20Upgradeable(DEUS).balanceOf(address(this)),
+        //     DEI_DEUS_POOL,
+        //     true
+        // );
+        // _beethovenSwap(
+        //     DEI,
+        //     want,
+        //     IERC20Upgradeable(DEI).balanceOf(address(this)),
+        //     beetsPoolId,
+        //     true
+        // );
+        // // BEETS -> USDC -> bb-yv-USD -> want
         _beethovenSwap(
             BEETS,
             USDC,
@@ -202,9 +216,17 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
         bytes32 _poolId,
         bool _shouldIncreaseAllowance
     ) internal {
+        console.log("_beethovenSwap()");
+        console.log("_from: ", _from);
+        console.log("_to: ", _to);
+        console.log("_amount: ", _amount);
+
         if (_from == _to || _amount == 0) {
             return;
         }
+
+        
+        console.logBytes32(_poolId);
 
         IBeetVault.SingleSwap memory singleSwap;
         singleSwap.poolId = _poolId;
