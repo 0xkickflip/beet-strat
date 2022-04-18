@@ -177,13 +177,13 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
     function _addLiquidity() internal {
         console.log("_addLiquidity()");
         // DEUS -> DEI -> want
-        // _beethovenSwap(
-        //     DEUS,
-        //     DEI,
-        //     IERC20Upgradeable(DEUS).balanceOf(address(this)),
-        //     DEI_DEUS_POOL,
-        //     true
-        // );
+        _beethovenSwap(
+            DEUS,
+            DEI,
+            IERC20Upgradeable(DEUS).balanceOf(address(this)),
+            DEI_DEUS_POOL,
+            true
+        );
         // _beethovenSwap(
         //     DEI,
         //     want,
@@ -229,14 +229,16 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
     function _joinPool() internal {
         console.log("_joinPool()");
         uint256 bb_yv_USDBal = IERC20Upgradeable(BB_YV_USD).balanceOf(address(this));
+        uint256 deiBal = IERC20Upgradeable(DEI).balanceOf(address(this));
         console.log("bb_yv_USDBal: ", bb_yv_USDBal);
-        if (bb_yv_USDBal == 0) {
+        console.log("deiBal: ", deiBal);
+        if (bb_yv_USDBal == 0 && deiBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
-        amountsIn[0] = bb_yv_USDBal;
+        amountsIn[1] = deiBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -246,7 +248,7 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
         request.userData = userData;
         request.fromInternalBalance = false;
 
-        // IERC20Upgradeable(USDC).safeIncreaseAllowance(BEET_VAULT, usdcBal);
+        IERC20Upgradeable(DEI).safeIncreaseAllowance(BEET_VAULT, deiBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
