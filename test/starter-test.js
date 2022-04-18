@@ -36,10 +36,10 @@ describe('Vaults', function () {
 
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x0459A6E0478644A87EE1371ecF944F403Ac65522';
-  const mcPoolId = 53;
+  const wantAddress = '0xD74519dA8842176305022cAB361327E0098fc1f5';
+  const mcPoolId = 70;
 
-  const wantHolderAddr = '0x7e028136aaf176b8e338581c0e62857d8b7f5ef4';
+  const wantHolderAddr = '0x6539519E69343535a2aF6583D9BAE3AD74c6A293';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   let owner;
@@ -54,7 +54,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 36381424,
+            blockNumber: 36383438,
           },
         },
       ],
@@ -114,37 +114,13 @@ describe('Vaults', function () {
     xit('should allow deposits and account for them correctly', async function () {
       const userBalance = await want.balanceOf(wantHolderAddr);
       const vaultBalance = await vault.balance();
-      const depositAmount = toWantUnit('10');
+      const depositAmount = userBalance;
       await vault.connect(wantHolder).deposit(depositAmount);
 
       const newVaultBalance = await vault.balance();
       const newUserBalance = await want.balanceOf(wantHolderAddr);
       const allowedInaccuracy = depositAmount.div(200);
       expect(depositAmount).to.be.closeTo(newVaultBalance, allowedInaccuracy);
-    });
-
-    xit('should mint user their pool share', async function () {
-      const userBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = toWantUnit('10');
-      await vault.connect(wantHolder).deposit(depositAmount);
-
-      const ownerDepositAmount = toWantUnit('0.1');
-      await want.connect(wantHolder).transfer(owner.address, ownerDepositAmount);
-      await want.connect(owner).approve(vault.address, ethers.constants.MaxUint256);
-      await vault.connect(owner).deposit(ownerDepositAmount);
-
-      const allowedImprecision = toWantUnit('0.0001');
-
-      const userVaultBalance = await vault.balanceOf(wantHolderAddr);
-      expect(userVaultBalance).to.be.closeTo(depositAmount, allowedImprecision);
-      const ownerVaultBalance = await vault.balanceOf(owner.address);
-      expect(ownerVaultBalance).to.be.closeTo(ownerDepositAmount, allowedImprecision);
-
-      await vault.connect(owner).withdrawAll();
-      const ownerWantBalance = await want.balanceOf(owner.address);
-      expect(ownerWantBalance).to.be.closeTo(ownerDepositAmount, allowedImprecision);
-      const afterOwnerVaultBalance = await vault.balanceOf(owner.address);
-      expect(afterOwnerVaultBalance).to.equal(0);
     });
 
     xit('should allow withdrawals', async function () {
@@ -170,7 +146,7 @@ describe('Vaults', function () {
       const depositAmount = toWantUnit('0.0000001');
       await vault.connect(wantHolder).deposit(depositAmount);
 
-      const ownerDepositAmount = toWantUnit('0.1');
+      const ownerDepositAmount = toWantUnit('0.001');
       await want.connect(wantHolder).transfer(owner.address, ownerDepositAmount);
       await want.connect(owner).approve(vault.address, ethers.constants.MaxUint256);
       await vault.connect(owner).deposit(ownerDepositAmount);
@@ -208,7 +184,7 @@ describe('Vaults', function () {
     xit('should provide yield', async function () {
       const timeToSkip = 3600;
       const initialUserBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = initialUserBalance.div(10);
+      const depositAmount = initialUserBalance;
 
       await vault.connect(wantHolder).deposit(depositAmount);
       const initialVaultBalance = await vault.balance();
@@ -231,7 +207,7 @@ describe('Vaults', function () {
   describe('Strategy', function () {
     xit('should be able to pause and unpause', async function () {
       await strategy.pause();
-      const depositAmount = toWantUnit('1');
+      const depositAmount = await want.balanceOf(wantHolderAddr);
       await expect(vault.connect(wantHolder).deposit(depositAmount)).to.be.reverted;
 
       await strategy.unpause();
@@ -239,7 +215,7 @@ describe('Vaults', function () {
     });
 
     xit('should be able to panic', async function () {
-      const depositAmount = toWantUnit('0.0007');
+      const depositAmount = await want.balanceOf(wantHolderAddr);
       await vault.connect(wantHolder).deposit(depositAmount);
       const vaultBalance = await vault.balance();
       const strategyBalance = await strategy.balanceOf();
@@ -251,7 +227,7 @@ describe('Vaults', function () {
     });
 
     xit('should be able to retire strategy', async function () {
-      const depositAmount = toWantUnit('30');
+      const depositAmount = await want.balanceOf(wantHolderAddr);
       await vault.connect(wantHolder).deposit(depositAmount);
       const vaultBalance = await vault.balance();
       const strategyBalance = await strategy.balanceOf();
@@ -270,7 +246,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to estimate harvest', async function () {
-      const whaleDepositAmount = toWantUnit('30');
+      const whaleDepositAmount = await want.balanceOf(wantHolderAddr);
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
       await strategy.harvest();
