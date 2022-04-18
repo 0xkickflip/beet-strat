@@ -9,10 +9,9 @@ import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router01.sol";
+import "./interfaces/ITimeBasedMasterChefRewarder.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
-
-import "hardhat/console.sol";
 
 /**
  * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
@@ -24,6 +23,7 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
     address public constant BEET_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
+    address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
 
     /**
      * @dev Tokens Used:
@@ -89,9 +89,7 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      *      It gets called whenever someone deposits in the strategy's vault contract.
      */
     function _deposit() internal override {
-        console.log("_deposit()");
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
-        console.log("wantBalance: ", wantBalance);
         if (wantBalance != 0) {
             IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
         }
@@ -131,7 +129,6 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      * @dev Core harvest function. Swaps {BEETS} and {CRE8R} to {WFTM}.
      */
     function _swapRewardsAndChargeFees() internal {
-        console.log("_swapRewardsAndChargeFees()");
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 cre8rBalance = IERC20Upgradeable(CRE8R).balanceOf(address(this));
         uint256 wftmFee = 0;
@@ -191,10 +188,8 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      *      Charges fees based on the amount of WFTM gained from reward
      */
     function _chargeFees() internal {
-        console.log("_chargeFees()");
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        console.log("wftmFee: ", wftmFee);
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
@@ -211,11 +206,8 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      * @dev Core harvest function. Joins {beetsPoolId} using {WFTM} balance;
      */
     function _joinPool() internal {
-        console.log("_joinPool()");
         uint256 wftmBalance = IERC20Upgradeable(WFTM).balanceOf(address(this));
         uint256 cre8rBalance = IERC20Upgradeable(CRE8R).balanceOf(address(this));
-        console.log("wftmBalance: ", wftmBalance);
-        console.log("cre8rBalance: ", cre8rBalance);
         if (wftmBalance == 0 && cre8rBalance == 0) {
             return;
         }
@@ -252,7 +244,10 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        ITimeBasedMasterChefRewarder rewarder = ITimeBasedMasterChefRewarder(masterChef.rewarder(mcPoolId));
+
+        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
         if (totalRewards != 0) {
@@ -261,6 +256,16 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+        }
+
+        // {CRE8R)} reward
+        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(CRE8R).balanceOf(address(this));
+        if (totalRewards != 0) {
+            address[] memory cre8rToWftm = new address[](2);
+            cre8rToWftm[0] = CRE8R;
+            cre8rToWftm[1] = WFTM;
+            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(totalRewards, cre8rToWftm)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
