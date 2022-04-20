@@ -51,7 +51,7 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
     /**
      * @dev Upgrade variables, at the end to avoid memory corruption
      * {lqdrPosition} - Index of {LQDR} in the Beethoven-X pool
-     * {LQDR} - Dual reward token and also underlying token used to join pool 
+     * {LQDR} - Dual reward token and also underlying token used to join pool
      */
     uint256 public constant lqdrPosition = 0;
     address public constant LQDR = address(0x10b620b2dbAC4Faa7D7FFD71Da486f5D44cd86f9);
@@ -130,14 +130,14 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
         uint256 wftmFee = 0;
         uint256 initialWftmBalance = wftm.balanceOf(address(this));
         uint256 lqdrBalance = IERC20Upgradeable(LQDR).balanceOf(address(this));
-        _swap(LQDR, WFTM, lqdrBalance * totalFee / PERCENT_DIVISOR, beetsPoolId);
+        _swap(LQDR, WFTM, (lqdrBalance * totalFee) / PERCENT_DIVISOR, beetsPoolId);
         wftmFee = wftm.balanceOf(address(this)) - initialWftmBalance;
         initialWftmBalance = wftm.balanceOf(address(this));
-        
+
         uint256 beetsBalance = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        
+
         _swap(BEETS, WFTM, beetsBalance, WFTM_BEETS_POOL);
-        wftmFee += (wftm.balanceOf(address(this)) - initialWftmBalance) * totalFee / PERCENT_DIVISOR;
+        wftmFee += ((wftm.balanceOf(address(this)) - initialWftmBalance) * totalFee) / PERCENT_DIVISOR;
 
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
