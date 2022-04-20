@@ -7,6 +7,7 @@ import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
+import "./interfaces/ILQDRRewarder.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
@@ -22,6 +23,7 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
     address public constant BEET_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
+    address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
 
     /**
      * @dev Tokens Used:
@@ -224,7 +226,8 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
         if (totalRewards != 0) {
@@ -233,6 +236,16 @@ contract ReaperStrategyBeethovenWftmUnderlying is ReaperBaseStrategyv1_1 {
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+        }
+
+        ILQDRRewarder rewarder = ILQDRRewarder(masterChef.rewarder(mcPoolId));
+        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(LQDR).balanceOf(address(this));
+        if (totalRewards != 0) {
+            address[] memory lqdrToWftmPath = new address[](2);
+            lqdrToWftmPath[0] = LQDR;
+            lqdrToWftmPath[1] = WFTM;
+            profit += IUniswapV2Router01(SPIRIT_ROUTER).getAmountsOut(totalRewards, lqdrToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
