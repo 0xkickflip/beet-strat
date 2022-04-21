@@ -1,9 +1,9 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0x0459A6E0478644A87EE1371ecF944F403Ac65522';
-  const tokenName = 'Spooky Melodies Beethoven-X Crypt';
-  const tokenSymbol = 'rf-BPT-BOOUSDC';
+  const wantAddress = '0x76A0631699Aa67a574340639036Fc93f5A1302F4';
+  const tokenName = 'Gelato Genesis Beethoven-X Crypt';
+  const tokenSymbol = 'rf-BPT-GELUSDC';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
