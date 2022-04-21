@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = 'TODO';
+  const vaultAddress = '0x98de53e7C7FE5DF05EF7092acF596a1281180697';
 
   const Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenWaterMusic');
   const treasuryAddress = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
