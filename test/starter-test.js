@@ -36,10 +36,9 @@ describe('Vaults', function () {
   
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757';
-  const mcPoolId = 41;
+  const wantAddress = '0xc0064b291bd3D4ba0E44ccFc81bF8E7f7a579cD2';
 
-  const wantHolderAddr = '0x0eA6e8aFf39F2B8aFd0447f2CB78D60b1B7FBD94';
+  const wantHolderAddr = '0x9dADb5473a1672Fbc8F2441D1D1522Ac06F67880';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
   
   let owner;
@@ -54,7 +53,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 34385092,
+            blockNumber: 36945453,
           },
         },
       ],
@@ -75,7 +74,7 @@ describe('Vaults', function () {
 
     //get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenYearnBoosted');
+    Strategy = await ethers.getContractFactory('ReaperStrategyTwoSmokingFantoms');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     //deploy contracts
@@ -88,7 +87,7 @@ describe('Vaults', function () {
     );
     strategy = await hre.upgrades.deployProxy(
       Strategy,
-      [vault.address, [treasuryAddr, paymentSplitterAddress], [strategistAddr], wantAddress, mcPoolId],
+      [vault.address, [treasuryAddr, paymentSplitterAddress], [strategistAddr]],
       { kind: 'uups' },
     );
     await strategy.deployed();
