@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
  * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
  *      "tokens".
  */
-contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
+contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
