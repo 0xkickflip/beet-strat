@@ -33,18 +33,28 @@ describe('Vaults', function () {
 
   let Want;
   let want;
+  let beets;
+  let sd;
 
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
-  const wantAddress = '0x0459A6E0478644A87EE1371ecF944F403Ac65522';
+  const wantAddress = '0x0b372f3A9039D02B87434d5C1297060c1ee4D5fF';
   const mcPoolId = 53;
 
-  const wantHolderAddr = '0x7e028136aaf176b8e338581c0e62857d8b7f5ef4';
+  const wantHolderAddr = '0xe66b9c6b6363195e75f806bf5519e578f02114ce';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
+
+  const beetsAddress = '0xf24bcf4d1e507740041c9cfd2dddb29585adce1e';
+  const beetsHolderAddr = '0xb71407e1f5b39797f1d9b245c065f406aaa1d379';
+
+  const sdAddress = '0x412a13C109aC30f0dB80AD3Bd1DeFd5D0A6c0Ac6';
+  const sdHolderAddr = '0x9dadb5473a1672fbc8f2441d1d1522ac06f67880';
 
   let owner;
   let wantHolder;
   let strategist;
+  let beetsHolder;
+  let sdHolder;
 
   beforeEach(async function () {
     //reset network
@@ -54,7 +64,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 36381424,
+            blockNumber: 36939932,
           },
         },
       ],
@@ -73,9 +83,20 @@ describe('Vaults', function () {
     });
     strategist = await ethers.provider.getSigner(strategistAddr);
 
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [beetsHolderAddr],
+    });
+    beetsHolder = await ethers.provider.getSigner(beetsHolderAddr);
+    await hre.network.provider.request({
+      method: 'hardhat_impersonateAccount',
+      params: [sdHolderAddr],
+    });
+    sdHolder = await ethers.provider.getSigner(sdHolderAddr);
+
     //get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenUsdcUnderlying');
+    Strategy = await ethers.getContractFactory('ReaperStrategyBeethovenStaderStable');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     //deploy contracts
@@ -94,6 +115,8 @@ describe('Vaults', function () {
     await strategy.deployed();
     await vault.initialize(strategy.address);
     want = await Want.attach(wantAddress);
+    beets = await Want.attach(beetsAddress);
+    sd = await Want.attach(sdAddress);
 
     //approving LP token and vault share spend
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
@@ -205,10 +228,10 @@ describe('Vaults', function () {
       expect(isSmallBalanceDifference).to.equal(true);
     });
 
-    xit('should provide yield', async function () {
+    it('should provide yield', async function () {
       const timeToSkip = 3600;
       const initialUserBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = initialUserBalance.div(10);
+      const depositAmount = initialUserBalance;
 
       await vault.connect(wantHolder).deposit(depositAmount);
       const initialVaultBalance = await vault.balance();
@@ -217,6 +240,8 @@ describe('Vaults', function () {
 
       const numHarvests = 5;
       for (let i = 0; i < numHarvests; i++) {
+        await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
+        await sd.connect(sdHolder).transfer(strategy.address, toWantUnit('1'));
         await moveBlocksForward(100);
         await strategy.harvest();
       }
@@ -269,7 +294,7 @@ describe('Vaults', function () {
       await expect(strategy.retireStrat()).to.not.be.reverted;
     });
 
-    it('should be able to estimate harvest', async function () {
+    xit('should be able to estimate harvest', async function () {
       const whaleDepositAmount = toWantUnit('30');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
