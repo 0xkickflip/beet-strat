@@ -8,6 +8,7 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
+import "./interfaces/ISDRewarder.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
@@ -203,7 +204,8 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
         if (totalRewards != 0) {
@@ -212,6 +214,17 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
             beetsToWftmPath[0] = BEETS;
             beetsToWftmPath[1] = WFTM;
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
+        }
+
+        ISDRewarder rewarder = ISDRewarder(masterChef.rewarder(mcPoolId));
+        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(SD).balanceOf(address(this));
+        if (totalRewards != 0) {
+            address[] memory sdToWftmPath = new address[](3);
+            sdToWftmPath[0] = SD;
+            sdToWftmPath[1] = USDC;
+            sdToWftmPath[2] = WFTM;
+            profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, sdToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
