@@ -25,36 +25,35 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
 
     /**
      * @dev Tokens Used:
-     * {WFTM} - Required for charging fees. May also be used to join pool if there's {WFTM} underlying.
-     * {USDC} - May be used to join pool if there's {USDC} underlying.
-     * {BEETS} - Reward token for depositing LP into MasterChef. May also be used to join pool if there's {BEETS} underlying.
      * {want} - LP token for the Beethoven-x pool.
-     * {underlyingToLinear} - Map of underlying token to linear pool, example {USDC} -> {bb-yv-USDC}
+     * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {SD} - Secondary reward token for depositing LP into MasterChef.
+     * {WFTM} - Required for charging fees and joining pool.
+     * {USDC} - Used an intermediary token to convert {totalFee}% of {SD} to {WFTM}.
+     * {sFTMx} - One of the pool tokens, used to join pool through a swap.
+     * {WFTM_LINEAR_BPT} - Other pool token that's used to join pool via swaps.
      */
+    address public constant want = address(0xc0064b291bd3D4ba0E44ccFc81bF8E7f7a579cD2);
+    address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant SD = address(0x412a13C109aC30f0dB80AD3Bd1DeFd5D0A6c0Ac6);
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
-    address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
-    address public want;
-    mapping(address => address) public underlyingToLinear;
+    address public constant sFTMx = address(0xd7028092c830b5C8FcE061Af2E593413EbbC1fc1);
+    address public constant WFTM_LINEAR_BPT = address(0xC3BF643799237588b7a6B407B3fc028Dd4e037d2);
 
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
-    bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
+    bytes32 public constant SD_USDC_sFTMx_POOL = 0x0b372f3a9039d02b87434d5c1297060c1ee4d5ff00010000000000000000042f;
     bytes32 public constant WFTM_USDC_POOL = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
+    bytes32 public constant WFTM_LINEAR_POOL = 0xc3bf643799237588b7a6b407b3fc028dd4e037d200000000000000000000022d;
 
     /**
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {beetsUnderlying} - Whether {BEETS} is an underlying token for one of the linear pools.
-     * {wftmUnderlying} - Whether {WFTM} is an underlying token for one of the linear pools.
-     * {usdcUnderlying} - Whether {USDC} is an underlying token for one of the linear pools.
      */
-    uint256 public mcPoolId;
-    bytes32 public beetsPoolId;
-    bool public beetsUnderlying;
-    bool public wftmUnderlying;
-    bool public usdcUnderlying;
+    uint256 public constant mcPoolId = 82;
+    bytes32 public constant beetsPoolId = 0xc0064b291bd3d4ba0e44ccfc81bf8e7f7a579cd200000000000000000000042c;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -63,37 +62,9 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
     function initialize(
         address _vault,
         address[] memory _feeRemitters,
-        address[] memory _strategists,
-        address _want,
-        uint256 _mcPoolId
+        address[] memory _strategists
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists);
-        want = _want;
-        mcPoolId = _mcPoolId;
-        beetsPoolId = IBasePool(want).getPoolId();
-
-        beetsUnderlying = false;
-        wftmUnderlying = false;
-        usdcUnderlying = false;
-
-        (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            // skip {want} since that's also registered as a pool token
-            if (address(tokens[i]) == _want) {
-                continue;
-            }
-
-            address underlying = ILinearPool(address(tokens[i])).getMainToken();
-            underlyingToLinear[underlying] = address(tokens[i]);
-
-            if (underlying == WFTM) {
-                wftmUnderlying = true;
-            } else if (underlying == USDC) {
-                usdcUnderlying = true;
-            } else if (underlying == BEETS) {
-                beetsUnderlying = true;
-            }
-        }
     }
 
     /**
@@ -122,24 +93,15 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. It claims rewards from the masterChef.
-     *      2. It charges the system fees to simplify the split.
-     *      3. It swaps {BEEST} for {want}.
-     *      4. It deposits the new {want} tokens into the masterchef.
+     *      1. Claim {BEETS} and {SD} rewards from MasterChef.
+     *      2. Perform swaps and charge fees.
+     *      3. Create more {want} by "swapping in" to pool.
+     *      4. Deposit.
      */
     function _harvestCore() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _chargeFees();
-
-        if (beetsUnderlying) {
-            _addLiquidity(BEETS);
-        } else if (wftmUnderlying) {
-            _addLiquidity(WFTM);
-        } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
-        }
-
+        _performSwapsAndChargeFees();
+        _addLiquidity();
         deposit();
     }
 
@@ -147,23 +109,24 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
      * @dev Core harvest function.
      *      Charges fees based on the amount of WFTM gained from reward
      */
-    function _chargeFees() internal {
+    function _performSwapsAndChargeFees() internal {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
+        uint256 startingWftmBal = wftm.balanceOf(address(this));
         uint256 wftmFee = 0;
 
-        if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        } else {
-            _swap(
-                BEETS,
-                WFTM,
-                (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-                WFTM_BEETS_POOL,
-                true
-            );
-            wftmFee = wftm.balanceOf(address(this));
-        }
+        _swap(
+            SD,
+            USDC,
+            (IERC20Upgradeable(SD).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
+            SD_USDC_sFTMx_POOL,
+            true
+        );
+        _swap(USDC, WFTM, IERC20Upgradeable(USDC).balanceOf(address(this)), WFTM_USDC_POOL, true);
+        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
+        startingWftmBal = wftm.balanceOf(address(this));
+
+        _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+        wftmFee += ((wftm.balanceOf(address(this)) - startingWftmBal) * totalFee) / PERCENT_DIVISOR;
 
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
@@ -179,24 +142,14 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
 
     /**
      * @dev Core harvest function.
-     *      Converts {_underlying} token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
-     *      two swaps involving linear pools.
+     *      Creates new {want} tokens using {WFTM} and {SD} balance.
      */
-    function _addLiquidity(address _underlying) internal {
-        _swap(
-            _underlying,
-            underlyingToLinear[_underlying],
-            IERC20Upgradeable(_underlying).balanceOf(address(this)),
-            ILinearPool(underlyingToLinear[_underlying]).getPoolId(),
-            true
-        );
-        _swap(
-            underlyingToLinear[_underlying],
-            want,
-            IERC20Upgradeable(underlyingToLinear[_underlying]).balanceOf(address(this)),
-            beetsPoolId,
-            false
-        );
+    function _addLiquidity() internal {
+        _swap(WFTM, WFTM_LINEAR_BPT, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_LINEAR_POOL, true);
+        _swap(WFTM_LINEAR_BPT, want, IERC20Upgradeable(WFTM_LINEAR_BPT).balanceOf(address(this)), beetsPoolId, false);
+
+        _swap(SD, sFTMx, IERC20Upgradeable(SD).balanceOf(address(this)), SD_USDC_sFTMx_POOL, true);
+        _swap(sFTMx, want, IERC20Upgradeable(sFTMx).balanceOf(address(this)), beetsPoolId, true);
     }
 
     /**
@@ -279,15 +232,8 @@ contract ReaperStrategyTwoSmokingFantoms is ReaperBaseStrategyv2 {
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
-        if (beetsUnderlying) {
-            _addLiquidity(BEETS);
-        } else if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            _addLiquidity(WFTM);
-        } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
-        }
+        _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+        _addLiquidity();
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
