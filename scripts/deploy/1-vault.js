@@ -7,7 +7,7 @@ async function main() {
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
-  const vault = await Vault.deploy(wantAddress, tokenName, tokenSymbol, depositFee, tvlCap);
+  const vault = await Vault.deploy(wantAddress, tokenName, tokenSymbol, depositFee, tvlCap, {gasPrice: 2000000000000});
 
   await vault.deployed();
   console.log('Vault deployed to:', vault.address);
