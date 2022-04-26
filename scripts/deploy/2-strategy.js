@@ -10,7 +10,7 @@ async function main() {
   const strategist2 = '0x81876677843D00a7D792E1617459aC2E93202576';
   const strategist3 = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
   const wantAddress = '0xDFc65c1F15AD3507754EF0fd4BA67060C108db7E';
-  const mcPoolId = 0;
+  const mcPoolId = 83;
 
   const strategy = await hre.upgrades.deployProxy(
     Strategy,
