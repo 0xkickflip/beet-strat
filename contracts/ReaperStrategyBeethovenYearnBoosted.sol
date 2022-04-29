@@ -11,6 +11,8 @@ import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
  *      "tokens".
@@ -34,7 +36,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
-    address public want;
+    address public constant want = address(0x592fa9F9d58065096f2B7838709C116957D7B5CF);
     mapping(address => address) public underlyingToLinear;
 
     // pools used to swap tokens
@@ -46,15 +48,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {beetsUnderlying} - Whether {BEETS} is an underlying token for one of the linear pools.
-     * {wftmUnderlying} - Whether {WFTM} is an underlying token for one of the linear pools.
-     * {usdcUnderlying} - Whether {USDC} is an underlying token for one of the linear pools.
      */
-    uint256 public mcPoolId;
-    bytes32 public beetsPoolId;
-    bool public beetsUnderlying;
-    bool public wftmUnderlying;
-    bool public usdcUnderlying;
+    uint256 public constant mcPoolId = 0;
+    bytes32 public constant beetsPoolId = 0x592fa9f9d58065096f2b7838709c116957d7b5cf00020000000000000000043c;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -63,37 +59,9 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     function initialize(
         address _vault,
         address[] memory _feeRemitters,
-        address[] memory _strategists,
-        address _want,
-        uint256 _mcPoolId
+        address[] memory _strategists
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists);
-        want = _want;
-        mcPoolId = _mcPoolId;
-        beetsPoolId = IBasePool(want).getPoolId();
-
-        beetsUnderlying = false;
-        wftmUnderlying = false;
-        usdcUnderlying = false;
-
-        (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            // skip {want} since that's also registered as a pool token
-            if (address(tokens[i]) == _want) {
-                continue;
-            }
-
-            address underlying = ILinearPool(address(tokens[i])).getMainToken();
-            underlyingToLinear[underlying] = address(tokens[i]);
-
-            if (underlying == WFTM) {
-                wftmUnderlying = true;
-            } else if (underlying == USDC) {
-                usdcUnderlying = true;
-            } else if (underlying == BEETS) {
-                beetsUnderlying = true;
-            }
-        }
     }
 
     /**
@@ -131,14 +99,14 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _chargeFees();
 
-        if (beetsUnderlying) {
-            _addLiquidity(BEETS);
-        } else if (wftmUnderlying) {
-            _addLiquidity(WFTM);
-        } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
-        }
+        // if (beetsUnderlying) {
+        //     _addLiquidity(BEETS);
+        // } else if (wftmUnderlying) {
+        //     _addLiquidity(WFTM);
+        // } else if (usdcUnderlying) {
+        //     _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        //     _addLiquidity(USDC);
+        // }
 
         deposit();
     }
@@ -151,19 +119,19 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 wftmFee = 0;
 
-        if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        } else {
-            _swap(
-                BEETS,
-                WFTM,
-                (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-                WFTM_BEETS_POOL,
-                true
-            );
-            wftmFee = wftm.balanceOf(address(this));
-        }
+        // if (wftmUnderlying) {
+        //     _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+        //     wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        // } else {
+        //     _swap(
+        //         BEETS,
+        //         WFTM,
+        //         (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
+        //         WFTM_BEETS_POOL,
+        //         true
+        //     );
+        //     wftmFee = wftm.balanceOf(address(this));
+        // }
 
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
@@ -279,15 +247,15 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
-        if (beetsUnderlying) {
-            _addLiquidity(BEETS);
-        } else if (wftmUnderlying) {
-            _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-            _addLiquidity(WFTM);
-        } else if (usdcUnderlying) {
-            _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-            _addLiquidity(USDC);
-        }
+        // if (beetsUnderlying) {
+        //     _addLiquidity(BEETS);
+        // } else if (wftmUnderlying) {
+        //     _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
+        //     _addLiquidity(WFTM);
+        // } else if (usdcUnderlying) {
+        //     _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        //     _addLiquidity(USDC);
+        // }
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
