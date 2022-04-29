@@ -8,6 +8,7 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
+import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IUniswapV2Router01.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
@@ -17,7 +18,7 @@ import "hardhat/console.sol";
  * @dev LP compounding strategy for Beethoven-X pools that use yearn-boosted linear pools as underlying
  *      "tokens".
  */
-contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
+contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -27,22 +28,30 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
 
     /**
      * @dev Tokens Used:
-     * {WFTM} - Required for charging fees. May also be used to join pool if there's {WFTM} underlying.
-     * {USDC} - May be used to join pool if there's {USDC} underlying.
-     * {BEETS} - Reward token for depositing LP into MasterChef. May also be used to join pool if there's {BEETS} underlying.
+     * {WFTM} - Required for charging fees.
+     * {USDC} - Used for liquidity routing and swapping in to the want token.
+     * {sFTMx} - One of the pool tokens, used to join pool through a swap.
+     * {BEETS} - Reward token for depositing LP into MasterChef. 
+     * {SD} - Secondary reward token for depositing LP into MasterChef.
      * {want} - LP token for the Beethoven-x pool.
-     * {underlyingToLinear} - Map of underlying token to linear pool, example {USDC} -> {bb-yv-USDC}
+     * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
+    address public constant sFTMx = address(0xd7028092c830b5C8FcE061Af2E593413EbbC1fc1);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant SD = address(0x412a13C109aC30f0dB80AD3Bd1DeFd5D0A6c0Ac6);
+    address public constant BB_YV_USDC = address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561);
+    address public constant BB_YV_USD = address(0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757);
     address public constant want = address(0x592fa9F9d58065096f2B7838709C116957D7B5CF);
-    mapping(address => address) public underlyingToLinear;
-
+    IAsset[] underlyings;
+    
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
     bytes32 public constant WFTM_USDC_POOL = 0xcdf68a4d525ba2e90fe959c74330430a5a6b8226000200000000000000000008;
+    bytes32 public constant DAI_USDC_BOOSTED_POOL = 0x5ddb92a5340fd0ead3987d3661afcd6104c3b757000000000000000000000187;
+    bytes32 public constant SD_USDC_SFTMX_POOL = 0x0b372f3a9039d02b87434d5c1297060c1ee4d5ff00010000000000000000042f;
 
     /**
      * @dev Strategy variables
@@ -51,6 +60,8 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      */
     uint256 public constant mcPoolId = 0;
     bytes32 public constant beetsPoolId = 0x592fa9f9d58065096f2b7838709c116957d7b5cf00020000000000000000043c;
+    uint256 public sftmxPosition;
+    uint256 public boostedUSDPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -62,6 +73,17 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
         address[] memory _strategists
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists);
+
+        (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (address(tokens[i]) == sFTMx) {
+                sftmxPosition = i;
+            } else if (address(tokens[i]) == BB_YV_USDC) {
+                boostedUSDPosition = i;
+            }
+
+            underlyings.push(IAsset(address(tokens[i])));
+        }
     }
 
     /**
@@ -71,8 +93,8 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     function _deposit() internal override {
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
-            IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
-            IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
+            // IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
+            // IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
         }
     }
 
@@ -82,7 +104,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
     function _withdraw(uint256 _amount) internal override {
         uint256 wantBal = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBal < _amount) {
-            IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, _amount - wantBal, address(this));
+            // IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, _amount - wantBal, address(this));
         }
 
         IERC20Upgradeable(want).safeTransfer(vault, _amount);
@@ -96,46 +118,33 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
-        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _chargeFees();
-
-        // if (beetsUnderlying) {
-        //     _addLiquidity(BEETS);
-        // } else if (wftmUnderlying) {
-        //     _addLiquidity(WFTM);
-        // } else if (usdcUnderlying) {
-        //     _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
-        //     _addLiquidity(USDC);
-        // }
+        _claimRewards();
+        _swapRewardsAndChargeFees();
+        _addLiquidity();
 
         deposit();
+    }
+
+    function _claimRewards() internal {
+        // IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
     }
 
     /**
      * @dev Core harvest function.
      *      Charges fees based on the amount of WFTM gained from reward
      */
-    function _chargeFees() internal {
+    function _swapRewardsAndChargeFees() internal {
+        _swap(SD, USDC, IERC20Upgradeable(SD).balanceOf(address(this))  * totalFee / PERCENT_DIVISOR, SD_USDC_SFTMX_POOL, true);
+        _swap(USDC, WFTM, IERC20Upgradeable(USDC).balanceOf(address(this)), WFTM_USDC_POOL, true);
+
+        _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this))  * totalFee / PERCENT_DIVISOR,WFTM_BEETS_POOL, true);
+
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = 0;
+        uint256 wftmBalance = wftm.balanceOf(address(this));
 
-        // if (wftmUnderlying) {
-        //     _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL, true);
-        //     wftmFee = (wftm.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        // } else {
-        //     _swap(
-        //         BEETS,
-        //         WFTM,
-        //         (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-        //         WFTM_BEETS_POOL,
-        //         true
-        //     );
-        //     wftmFee = wftm.balanceOf(address(this));
-        // }
-
-        if (wftmFee != 0) {
-            uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
-            uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
+        if (wftmBalance != 0) {
+            uint256 callFeeToUser = (wftmBalance * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (wftmBalance * treasuryFee) / PERCENT_DIVISOR;
             uint256 feeToStrategist = (treasuryFeeToVault * strategistFee) / PERCENT_DIVISOR;
             treasuryFeeToVault -= feeToStrategist;
 
@@ -150,21 +159,39 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      *      Converts {_underlying} token (one of {BEETS}, {WFTM} or {USDC}) to {want} using
      *      two swaps involving linear pools.
      */
-    function _addLiquidity(address _underlying) internal {
-        _swap(
-            _underlying,
-            underlyingToLinear[_underlying],
-            IERC20Upgradeable(_underlying).balanceOf(address(this)),
-            ILinearPool(underlyingToLinear[_underlying]).getPoolId(),
-            true
-        );
-        _swap(
-            underlyingToLinear[_underlying],
-            want,
-            IERC20Upgradeable(underlyingToLinear[_underlying]).balanceOf(address(this)),
-            beetsPoolId,
-            false
-        );
+    function _addLiquidity() internal {
+        _swap(SD, sFTMx, IERC20Upgradeable(SD).balanceOf(address(this)), SD_USDC_SFTMX_POOL, true);
+        _swap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        _swap(USDC, BB_YV_USDC, IERC20Upgradeable(USDC).balanceOf(address(this)), ILinearPool(BB_YV_USDC).getPoolId(), true);
+        _swap(BB_YV_USDC, BB_YV_USD, IERC20Upgradeable(BB_YV_USDC).balanceOf(address(this)), ILinearPool(BB_YV_USD).getPoolId(), false);
+        _joinPool();
+    }
+
+    /**
+     * @dev Core harvest function. Joins {beetsPoolId} using {USDC} balance;
+     */
+    function _joinPool() internal {
+        uint256 sftmxBal = IERC20Upgradeable(sFTMx).balanceOf(address(this));
+        uint256 boostedUsdBal = IERC20Upgradeable(BB_YV_USD).balanceOf(address(this));
+        if (sftmxBal == 0 && boostedUsdBal == 0) {
+            return;
+        }
+
+        IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
+        uint256[] memory amountsIn = new uint256[](2);
+        amountsIn[sftmxPosition] = sftmxBal;
+        amountsIn[boostedUSDPosition] = boostedUsdBal;
+        uint256 minAmountOut = 1;
+        bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
+
+        IBeetVault.JoinPoolRequest memory request;
+        request.assets = underlyings;
+        request.maxAmountsIn = amountsIn;
+        request.userData = userData;
+        request.fromInternalBalance = false;
+
+        IERC20Upgradeable(sFTMx).safeIncreaseAllowance(BEET_VAULT, sftmxBal);
+        IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
     /**
@@ -245,7 +272,7 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      */
     function _retireStrat() internal override {
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
-        IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
+        // IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
         // if (beetsUnderlying) {
         //     _addLiquidity(BEETS);
@@ -267,6 +294,6 @@ contract ReaperStrategyBeethovenYearnBoosted is ReaperBaseStrategyv2 {
      * Withdraws all funds leaving rewards behind.
      */
     function _reclaimWant() internal override {
-        IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
+        // IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
     }
 }
