@@ -7,8 +7,9 @@ import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
+import "./interfaces/IFHMRewarder.sol";
 import "./interfaces/IMasterChef.sol";
-import "./interfaces/IUniswapV2Router01.sol";
+import "./interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
@@ -28,12 +29,14 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
      * {WFTM} - Required for liquidity routing when doing swaps.
      * {DAI} - Token used to join the Beethoven-X pool using the rewards.
      * {BEETS} - Reward token for depositing LP into MasterChef.
+     * {FHM} - Secondary reward token for depositing LP into MasterChef.
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant DAI = address(0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    address public constant FHM = address(0xfa1FBb8Ef55A4855E5688C0eE13aC3f202486286);
     address public want;
     IAsset[] underlyings;
 
@@ -50,6 +53,14 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
     uint256 public daiPosition;
+
+    /**
+     * @dev More strategy variables, need to be initialized post-upgrade
+     * {fhmToDaiPath} - Path used to swap {FHM} to {DAI}.
+     * {fhmToWftmPath} - Path used to swap {FHM} to {WFTM}.
+     */
+    address[] public fhmToDaiPath;
+    address[] public fhmToWftmPath;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -125,10 +136,17 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
      *      Swaps {BEETS} to {WFTM}, then charges fees based on the amount gained from rewards
      */
     function _swapRewardsAndChargeFees() internal {
-        _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
-
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 wftmFee = wftm.balanceOf(address(this)) * totalFee / PERCENT_DIVISOR;
+        uint256 startingWftmBal = wftm.balanceOf(address(this));
+        uint256 wftmFee = 0;
+
+        _spookySwap((IERC20Upgradeable(FHM).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR, fhmToWftmPath);
+        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
+        startingWftmBal = wftm.balanceOf(address(this));
+
+        _beetSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
+        wftmFee += ((wftm.balanceOf(address(this)) - startingWftmBal) * totalFee) / PERCENT_DIVISOR;
+
         if (wftmFee != 0) {
             uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
@@ -144,7 +162,7 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
     /**
      * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
      */
-    function _swap(
+    function _beetSwap(
         address _from,
         address _to,
         uint256 _amount,
@@ -173,10 +191,30 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
     }
 
     /**
+     * @dev Helper function to swap tokens given an {_amount} and swap {_path}.
+     */
+    function _spookySwap(uint256 _amount, address[] memory _path) internal {
+        if (_path.length < 2 || _amount == 0) {
+            return;
+        }
+
+        IERC20Upgradeable(_path[0]).safeIncreaseAllowance(SPOOKY_ROUTER, _amount);
+        IUniswapV2Router02(SPOOKY_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _amount,
+            0,
+            _path,
+            address(this),
+            block.timestamp
+        );
+    }
+
+    /**
      * @dev Core harvest function. Joins {beetsPoolId} using {USDC} balance;
      */
     function _joinPool() internal {
-        _swap(WFTM, DAI, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_DAI_POOL);
+        _spookySwap(IERC20Upgradeable(FHM).balanceOf(address(this)), fhmToDaiPath);
+        _beetSwap(WFTM, DAI, IERC20Upgradeable(WFTM).balanceOf(address(this)), WFTM_DAI_POOL);
+
         uint256 daiBalance = IERC20Upgradeable(DAI).balanceOf(address(this));
         if (daiBalance == 0) {
             return;
@@ -212,7 +250,8 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
      *      Profit is denominated in WFTM, and takes fees into account.
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        uint256 pendingReward = IMasterChef(MASTER_CHEF).pendingBeets(mcPoolId, address(this));
+        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
+        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
         uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
 
         if (totalRewards != 0) {
@@ -223,11 +262,27 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
             profit += IUniswapV2Router01(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
         }
 
+        IFHMRewarder rewarder = IFHMRewarder(masterChef.rewarder(mcPoolId));
+        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(FHM).balanceOf(address(this));
+        if (totalRewards != 0) {
+            profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, fhmToWftmPath)[1];
+        }
+
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
 
         uint256 wftmFee = (profit * totalFee) / PERCENT_DIVISOR;
         callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
         profit -= wftmFee;
+    }
+
+    /**
+     * @notice Admin-only function to set FHM swap paths post-upgrade.
+     */
+    function setPathsPostUpgrade(address[] calldata _fhmToWftmPath, address[] calldata _fhmToDaiPath) external {
+        _onlyStrategistOrOwner();
+        fhmToWftmPath = _fhmToWftmPath;
+        fhmToDaiPath = _fhmToDaiPath;
     }
 
     /**
@@ -239,7 +294,8 @@ contract ReaperStrategyBeethovenDaiUnderlying is ReaperBaseStrategyv1_1 {
      */
     function _retireStrat() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _swap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
+        _beetSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
+
         _joinPool();
 
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
