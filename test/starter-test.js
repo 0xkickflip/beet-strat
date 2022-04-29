@@ -39,7 +39,7 @@ describe('Vaults', function () {
   const wantAddress = '0xD5E946b5619fFf054c40D38c976f1d06C1e2fA82';
   const mcPoolId = 80;
 
-  const wantHolderAddr = '0xaf6eacbb79f8e6d724e04f00d1fc9853ef09e081';
+  const wantHolderAddr = '0xaC5cefb7CB6B534a0E7fd0aE6e9062cCe88F49Cf';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   let owner;
@@ -54,7 +54,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 36558254,
+            blockNumber: 37221951,
           },
         },
       ],
@@ -94,6 +94,16 @@ describe('Vaults', function () {
     await strategy.deployed();
     await vault.initialize(strategy.address);
     want = await Want.attach(wantAddress);
+
+    // set FHM paths
+    await strategy.setPathsPostUpgrade(
+      [
+        '0xfa1FBb8Ef55A4855E5688C0eE13aC3f202486286',
+        '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E',
+        '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83',
+      ],
+      ['0xfa1FBb8Ef55A4855E5688C0eE13aC3f202486286', '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E'],
+    );
 
     //approving LP token and vault share spend
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
@@ -251,7 +261,7 @@ describe('Vaults', function () {
     });
 
     it('should be able to retire strategy', async function () {
-      const depositAmount = toWantUnit('30');
+      const depositAmount = toWantUnit('3000');
       await vault.connect(wantHolder).deposit(depositAmount);
       const vaultBalance = await vault.balance();
       const strategyBalance = await strategy.balanceOf();
