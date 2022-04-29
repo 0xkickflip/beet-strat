@@ -38,7 +38,7 @@ describe('Vaults', function () {
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
   const wantAddress = '0x592fa9F9d58065096f2B7838709C116957D7B5CF';
 
-  const wantHolderAddr = '0xb2515a7221b2654f9faae0e4ed1d0e49aa7b85dd';
+  const wantHolderAddr = '0xe66b9c6b6363195e75f806bf5519e578f02114ce';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   const beetsAddress = '0xf24bcf4d1e507740041c9cfd2dddb29585adce1e';
@@ -61,7 +61,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 37203201,
+            blockNumber: 37213807,
           },
         },
       ],
@@ -169,7 +169,7 @@ describe('Vaults', function () {
 
     xit('should allow withdrawals', async function () {
       const userBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = toWantUnit('100');
+      const depositAmount = userBalance;
       await vault.connect(wantHolder).deposit(depositAmount);
 
       await vault.connect(wantHolder).withdrawAll();
@@ -226,11 +226,12 @@ describe('Vaults', function () {
     });
 
     xit('should be able to harvest', async function () {
-      await vault.connect(wantHolder).deposit(toWantUnit('1000'));
+      const userBalance = await want.balanceOf(wantHolderAddr);
+      await vault.connect(wantHolder).deposit(userBalance);
       await strategy.harvest();
     });
 
-    it('should provide yield', async function () {
+    xit('should provide yield', async function () {
       const timeToSkip = 3600;
       const initialUserBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = initialUserBalance;
@@ -242,8 +243,8 @@ describe('Vaults', function () {
 
       const numHarvests = 5;
       for (let i = 0; i < numHarvests; i++) {
-        await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
-        await sd.connect(sdHolder).transfer(strategy.address, toWantUnit('1'));
+        // await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
+        // await sd.connect(sdHolder).transfer(strategy.address, toWantUnit('1'));
         await moveBlocksForward(100);
         await strategy.harvest();
       }
@@ -278,7 +279,8 @@ describe('Vaults', function () {
     });
 
     xit('should be able to retire strategy', async function () {
-      const depositAmount = toWantUnit('1000');
+      const userBalance = await want.balanceOf(wantHolderAddr);
+      const depositAmount = userBalance;
       await vault.connect(wantHolder).deposit(depositAmount);
       const vaultBalance = await vault.balance();
       const strategyBalance = await strategy.balanceOf();
@@ -292,12 +294,13 @@ describe('Vaults', function () {
       expect(newStrategyBalance).to.be.lt(allowedImprecision);
     });
 
-    xit('should be able to retire strategy with no balance', async function () {
+    it('should be able to retire strategy with no balance', async function () {
       await expect(strategy.retireStrat()).to.not.be.reverted;
     });
 
-    xit('should be able to estimate harvest', async function () {
-      const whaleDepositAmount = toWantUnit('1000');
+    it('should be able to estimate harvest', async function () {
+      const userBalance = await want.balanceOf(wantHolderAddr);
+      const whaleDepositAmount = userBalance;
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);
       await strategy.harvest();

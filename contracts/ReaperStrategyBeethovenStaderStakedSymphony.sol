@@ -57,7 +57,7 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      */
-    uint256 public constant mcPoolId = 0;
+    uint256 public constant mcPoolId = 84;
     bytes32 public constant beetsPoolId = 0x592fa9f9d58065096f2b7838709c116957d7b5cf00020000000000000000043c;
     uint256 public sftmxPosition;
     uint256 public boostedUSDPosition;
@@ -92,8 +92,8 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
     function _deposit() internal override {
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
-            // IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
-            // IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
+            IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
+            IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
         }
     }
 
@@ -103,7 +103,7 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
     function _withdraw(uint256 _amount) internal override {
         uint256 wantBal = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBal < _amount) {
-            // IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, _amount - wantBal, address(this));
+            IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, _amount - wantBal, address(this));
         }
 
         IERC20Upgradeable(want).safeTransfer(vault, _amount);
@@ -283,7 +283,7 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
     function _retireStrat() internal override {
         _harvestCore();
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
-        // IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
+        IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
@@ -295,6 +295,6 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
      * Withdraws all funds leaving rewards behind.
      */
     function _reclaimWant() internal override {
-        // IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
+        IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
     }
 }
