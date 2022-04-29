@@ -124,7 +124,7 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
     }
 
     function _claimRewards() internal {
-        // IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
+        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
     }
 
     /**
