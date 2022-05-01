@@ -77,7 +77,7 @@ contract ReaperStrategyBeethovenStaderStakedSymphony is ReaperBaseStrategyv2 {
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == sFTMx) {
                 sftmxPosition = i;
-            } else if (address(tokens[i]) == BB_YV_USDC) {
+            } else if (address(tokens[i]) == BB_YV_USD) {
                 boostedUSDPosition = i;
             }
 
