@@ -1,7 +1,7 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0xDFc65c1F15AD3507754EF0fd4BA67060C108db7E';
+  const wantAddress = '0xA55318E5d8B7584b8c0e5d3636545310Bf9eEb8f';
   const tokenName = 'From Gods, Boosted And Blessed Beethoven-X Crypt';
   const tokenSymbol = 'rf-bb-yv-deiusd';
   const depositFee = 0;
