@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 
-interface IDeusRewarder {
+interface IRewarder {
     function pendingToken(uint256 _pid, address _user) external view returns (uint256 pending);
 
     function pendingTokens(

@@ -14,9 +14,9 @@ import "./interfaces/IBaseWeightedPool.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the From Gods, Boosted And Blessed Beethoven-X pool.
+ * @dev LP compounding strategy for the Tenacious Dollar Beethoven-X pool.
  */
-contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
+contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
