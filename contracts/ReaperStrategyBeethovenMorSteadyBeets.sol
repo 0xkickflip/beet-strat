@@ -111,7 +111,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
-        // _claimRewards();
+        _claimRewards();
         _performSwapsAndChargeFees();
         _addLiquidity();
         deposit();

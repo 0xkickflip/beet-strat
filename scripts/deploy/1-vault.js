@@ -2,8 +2,8 @@ async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
   const wantAddress = '0xA55318E5d8B7584b8c0e5d3636545310Bf9eEb8f';
-  const tokenName = 'From Gods, Boosted And Blessed Beethoven-X Crypt';
-  const tokenSymbol = 'rf-bb-yv-deiusd';
+  const tokenName = 'Mor Steady Beets, Yearn Boosted Beethoven-X Crypt';
+  const tokenSymbol = 'rf-bb-yv-MOR-USD';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
