@@ -246,10 +246,10 @@ describe('Vaults', function () {
       const initialVaultBalance = await vault.balance();
 
       await strategy.updateHarvestLogCadence(1);
+      await beets.connect(beetsHolder).transfer(strategy.address, 100000000000000);
 
       const numHarvests = 5;
       for (let i = 0; i < numHarvests; i++) {
-        await beets.connect(beetsHolder).transfer(strategy.address, 10);
         await moveBlocksForward(100);
         await strategy.harvest();
       }

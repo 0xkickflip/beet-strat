@@ -13,6 +13,8 @@ import "./interfaces/IUniswapV2Router02.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
+import "hardhat/console.sol";
+
 /**
  * @dev LP compounding strategy for the Mor Steady Beets, Yearn Boosted Beethoven-X pool.
  */
@@ -68,7 +70,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists);
         want = _want;
         mcPoolId = _mcPoolId;
-        minBeetsToSwap = 10000000;
+        minBeetsToSwap = 100000000000000;
         beetsPoolId = IBasePool(want).getPoolId();
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
@@ -109,7 +111,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
      *      4. It deposits the new {want} tokens into the masterchef.
      */
     function _harvestCore() internal override {
-        _claimRewards();
+        // _claimRewards();
         _performSwapsAndChargeFees();
         _addLiquidity();
         deposit();
@@ -161,6 +163,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
         uint256 beetsBalance = IERC20Upgradeable(BEETS).balanceOf(address(this));
         if (beetsBalance >= minBeetsToSwap) {
             _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+            console.log(IERC20Upgradeable(USDC).balanceOf(address(this)));
         }
         _beethovenSwap(USDC, BB_YV_USDC, IERC20Upgradeable(USDC).balanceOf(address(this)), BB_YV_USDC_POOL, true);
         _beethovenSwap(
