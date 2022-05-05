@@ -14,9 +14,9 @@ import "./interfaces/IBaseWeightedPool.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the From Gods, Boosted And Blessed Beethoven-X pool.
+ * @dev LP compounding strategy for the Mor Steady Beets, Yearn Boosted Beethoven-X pool.
  */
-contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
+contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -30,14 +30,14 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
      * {USDC} - Underlying token of the want LP used to swap in to the want
      * {BEETS} - Reward token for depositing LP into MasterChef. May also be used to join pool if there's {BEETS} underlying.
      * {DEUS} - Secondary reward token for depositing LP into MasterChef.
-     * {DEI} - Underlying token of the want LP used to swap in to the want
+     * {MOR} - Underlying token of the want LP used to swap in to the want
      * {want} - LP token for the Beethoven-x pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
     address public constant DEUS = address(0xDE5ed76E7c05eC5e4572CfC88d1ACEA165109E44);
-    address public constant DEI = address(0xDE12c7959E1a72bbe8a5f7A1dc8f8EeF9Ab011B3);
+    address public constant MOR = address(0x22A6aC883B2f5007486C0D0EBC520747c0702Ad5);
     address public constant BB_YV_USDC = address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561);
     address public constant BB_YV_USD = address(0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757);
     address public want;
@@ -166,8 +166,8 @@ contract ReaperStrategyBeethovenFromGods is ReaperBaseStrategyv2 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        _beethovenSwap(DEUS, DEI, IERC20Upgradeable(DEUS).balanceOf(address(this)), DEI_DEUS_POOL, true);
-        _beethovenSwap(DEI, want, IERC20Upgradeable(DEI).balanceOf(address(this)), beetsPoolId, true);
+        _beethovenSwap(DEUS, MOR, IERC20Upgradeable(DEUS).balanceOf(address(this)), DEI_DEUS_POOL, true);
+        _beethovenSwap(MOR, want, IERC20Upgradeable(MOR).balanceOf(address(this)), beetsPoolId, true);
 
         _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
         _beethovenSwap(USDC, BB_YV_USDC, IERC20Upgradeable(USDC).balanceOf(address(this)), BB_YV_USDC_POOL, true);
