@@ -6,7 +6,7 @@ import "./abstract/ReaperBaseStrategyv2.sol";
 import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBeetVault.sol";
-import "./interfaces/IDeusRewarder.sol";
+import "./interfaces/IRewarder.sol";
 import "./interfaces/ILinearPool.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/IUniswapV2Router02.sol";
@@ -29,15 +29,13 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
      * {WFTM} - Required for charging fees. May also be used to join pool if there's {WFTM} underlying.
      * {USDC} - Underlying token of the want LP used to swap in to the want
      * {BEETS} - Reward token for depositing LP into MasterChef. May also be used to join pool if there's {BEETS} underlying.
-     * {DEUS} - Secondary reward token for depositing LP into MasterChef.
-     * {DEI} - Underlying token of the want LP used to swap in to the want
+     * {gALCX} - Secondary reward token for depositing LP into MasterChef.
      * {want} - LP token for the Beethoven-x pool.
      */
     address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public constant USDC = address(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
-    address public constant DEUS = address(0xDE5ed76E7c05eC5e4572CfC88d1ACEA165109E44);
-    address public constant DEI = address(0xDE12c7959E1a72bbe8a5f7A1dc8f8EeF9Ab011B3);
+    address public constant gALCX = address(0x70F9fd19f857411b089977E7916c05A0fc477Ac9);
     address public constant BB_YV_USDC = address(0x3B998BA87b11a1c5BC1770dE9793B17A0dA61561);
     address public constant BB_YV_USD = address(0x5ddb92A5340FD0eaD3987D3661AfcD6104c3b757);
     address public want;
@@ -46,7 +44,6 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
     // pools used to swap tokens
     bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
     bytes32 public constant USDC_BEETS_POOL = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015;
-    bytes32 public constant DEI_DEUS_POOL = 0x0e8e7307e43301cf28c5d21d5fd3ef0876217d410002000000000000000003f1;
     bytes32 public constant BB_YV_USDC_POOL = 0x3b998ba87b11a1c5bc1770de9793b17a0da61561000000000000000000000185;
     bytes32 public constant BB_YV_USD_POOL = 0x5ddb92a5340fd0ead3987d3661afcd6104c3b757000000000000000000000187;
 
@@ -113,7 +110,8 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
      */
     function _harvestCore() internal override {
         _claimRewards();
-        _performSwapsAndChargeFees();
+        _swapToUSDC();
+        _chargeFees();
         _addLiquidity();
         deposit();
     }
@@ -122,42 +120,33 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
     }
 
+    function _swapToUSDC() internal {
+        _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+
+        address[] memory gAlcxToUsdcPath = new address[](3);
+        gAlcxToUsdcPath[0] = gALCX;
+        gAlcxToUsdcPath[1] = WFTM;
+        gAlcxToUsdcPath[2] = USDC;
+        _routerSwap(IERC20Upgradeable(gALCX).balanceOf(address(this)), gAlcxToUsdcPath);
+    }
+
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of WFTM gained from reward
+     *      Charges fees based on the amount of USDC gained from reward
      */
-    function _performSwapsAndChargeFees() internal {
-        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 startingWftmBal = wftm.balanceOf(address(this));
-        uint256 wftmFee = 0;
+    function _chargeFees() internal {
+        IERC20Upgradeable usdc = IERC20Upgradeable(USDC);
+        uint256 usdcFee = (usdc.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
 
-        _routerSwap(
-            DEUS,
-            WFTM,
-            (IERC20Upgradeable(DEUS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            SPOOKY_ROUTER
-        );
-        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
-        startingWftmBal = wftm.balanceOf(address(this));
-
-        _beethovenSwap(
-            BEETS,
-            WFTM,
-            (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            WFTM_BEETS_POOL,
-            true
-        );
-        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
-
-        if (wftmFee != 0) {
-            uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
-            uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
+        if (usdcFee != 0) {
+            uint256 callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
             uint256 feeToStrategist = (treasuryFeeToVault * strategistFee) / PERCENT_DIVISOR;
             treasuryFeeToVault -= feeToStrategist;
 
-            wftm.safeTransfer(msg.sender, callFeeToUser);
-            wftm.safeTransfer(treasury, treasuryFeeToVault);
-            wftm.safeTransfer(strategistRemitter, feeToStrategist);
+            usdc.safeTransfer(msg.sender, callFeeToUser);
+            usdc.safeTransfer(treasury, treasuryFeeToVault);
+            usdc.safeTransfer(strategistRemitter, feeToStrategist);
         }
     }
 
@@ -166,10 +155,6 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        _beethovenSwap(DEUS, DEI, IERC20Upgradeable(DEUS).balanceOf(address(this)), DEI_DEUS_POOL, true);
-        _beethovenSwap(DEI, want, IERC20Upgradeable(DEI).balanceOf(address(this)), beetsPoolId, true);
-
-        _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
         _beethovenSwap(USDC, BB_YV_USDC, IERC20Upgradeable(USDC).balanceOf(address(this)), BB_YV_USDC_POOL, true);
         _beethovenSwap(
             BB_YV_USDC,
@@ -219,33 +204,21 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
     }
 
     /**
-     * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_router}.
+     * @dev Helper function to swap tokens given an {_amount} and swap {_path}.
      */
-    function _routerSwap(
-        address _from,
-        address _to,
-        uint256 _amount,
-        address _router
-    ) internal {
-        if (_from == _to || _amount == 0) {
+    function _routerSwap(uint256 _amount, address[] memory _path) internal {
+        if (_path.length < 2 || _amount == 0) {
             return;
         }
 
-        IUniswapV2Router02 router = IUniswapV2Router02(_router);
-        address[] memory path = new address[](2);
-        path[0] = _from;
-        path[1] = _to;
-
-        if (router.getAmountsOut(_amount, path)[1] != 0) {
-            IERC20Upgradeable(_from).safeIncreaseAllowance(_router, _amount);
-            router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                _amount,
-                0,
-                path,
-                address(this),
-                block.timestamp
-            );
-        }
+        IERC20Upgradeable(_path[0]).safeIncreaseAllowance(SPOOKY_ROUTER, _amount);
+        IUniswapV2Router02(SPOOKY_ROUTER).swapExactTokensForTokensSupportingFeeOnTransferTokens(
+            _amount,
+            0,
+            _path,
+            address(this),
+            block.timestamp
+        );
     }
 
     /**
@@ -263,7 +236,7 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
      */
     function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
         IMasterChef masterChef = IMasterChef(MASTER_CHEF);
-        IDeusRewarder rewarder = IDeusRewarder(masterChef.rewarder(mcPoolId));
+        IRewarder rewarder = IRewarder(masterChef.rewarder(mcPoolId));
 
         // {BEETS} reward
         uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
@@ -276,14 +249,14 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
             profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
         }
 
-        // {DEUS} reward
+        // {gALCX} reward
         pendingReward = rewarder.pendingToken(mcPoolId, address(this));
-        totalRewards = pendingReward + IERC20Upgradeable(DEUS).balanceOf(address(this));
+        totalRewards = pendingReward + IERC20Upgradeable(gALCX).balanceOf(address(this));
         if (totalRewards != 0) {
-            address[] memory deusToWftmPath = new address[](2);
-            deusToWftmPath[0] = DEUS;
-            deusToWftmPath[1] = WFTM;
-            profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, deusToWftmPath)[1];
+            address[] memory gAlcxToWftmPath = new address[](2);
+            gAlcxToWftmPath[0] = gALCX;
+            gAlcxToWftmPath[1] = WFTM;
+            profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, gAlcxToWftmPath)[1];
         }
 
         profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
@@ -304,6 +277,7 @@ contract ReaperStrategyTenaciousDollar is ReaperBaseStrategyv2 {
         (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
 
+        _swapToUSDC();
         _addLiquidity();
 
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
