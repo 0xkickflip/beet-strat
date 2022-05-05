@@ -238,7 +238,7 @@ describe('Vaults', function () {
       await strategy.harvest();
     });
 
-    xit('should provide yield', async function () {
+    it('should provide yield', async function () {
       const timeToSkip = 3600;
       const depositAmount = await want.balanceOf(wantHolderAddr);
 
@@ -249,7 +249,7 @@ describe('Vaults', function () {
 
       const numHarvests = 5;
       for (let i = 0; i < numHarvests; i++) {
-        // await beets.connect(beetsHolder).transfer(strategy.address, toWantUnit('1'));
+        await beets.connect(beetsHolder).transfer(strategy.address, 10);
         await moveBlocksForward(100);
         await strategy.harvest();
       }
@@ -283,7 +283,7 @@ describe('Vaults', function () {
       expect(strategyBalance).to.be.closeTo(wantStratBalance, allowedImprecision);
     });
 
-    it('should be able to estimate harvest', async function () {
+    xit('should be able to estimate harvest', async function () {
       const whaleDepositAmount = toWantUnit('1000');
       await vault.connect(wantHolder).deposit(whaleDepositAmount);
       await moveBlocksForward(100);

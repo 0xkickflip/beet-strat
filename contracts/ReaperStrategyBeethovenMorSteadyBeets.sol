@@ -52,6 +52,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
+    uint256 public minBeetsToSwap;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -67,6 +68,7 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists);
         want = _want;
         mcPoolId = _mcPoolId;
+        minBeetsToSwap = 10000000;
         beetsPoolId = IBasePool(want).getPoolId();
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
@@ -125,14 +127,18 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
         IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
         uint256 startingWftmBal = wftm.balanceOf(address(this));
         uint256 wftmFee = 0;
+        uint256 beetsBalance = IERC20Upgradeable(BEETS).balanceOf(address(this));
 
-        _beethovenSwap(
-            BEETS,
-            WFTM,
-            (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            WFTM_BEETS_POOL,
-            true
-        );
+        if (beetsBalance >= minBeetsToSwap) {
+            _beethovenSwap(
+                BEETS,
+                WFTM,
+                (IERC20Upgradeable(BEETS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
+                WFTM_BEETS_POOL,
+                true
+            );
+        }
+
         wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
 
         if (wftmFee != 0) {
@@ -152,7 +158,10 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        uint256 beetsBalance = IERC20Upgradeable(BEETS).balanceOf(address(this));
+        if (beetsBalance >= minBeetsToSwap) {
+            _beethovenSwap(BEETS, USDC, IERC20Upgradeable(BEETS).balanceOf(address(this)), USDC_BEETS_POOL, true);
+        }
         _beethovenSwap(USDC, BB_YV_USDC, IERC20Upgradeable(USDC).balanceOf(address(this)), BB_YV_USDC_POOL, true);
         _beethovenSwap(
             BB_YV_USDC,
@@ -240,5 +249,13 @@ contract ReaperStrategyBeethovenMorSteadyBeets is ReaperBaseStrategyv2 {
      */
     function _reclaimWant() internal override {
         IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
+    }
+
+    /**
+     * Sets the minimum {BEETS} reward to swap
+     */
+    function _setMinBeetsToSwap(uint256 _minBeetsToSwap) external {
+        _onlyStrategistOrOwner();
+        minBeetsToSwap = _minBeetsToSwap;
     }
 }

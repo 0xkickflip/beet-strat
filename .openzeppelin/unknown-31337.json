@@ -3,14 +3,14 @@
   "proxies": [
     {
       "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
-      "txHash": "0xcc8e7e5c6a02aae124ef2b2b5123067e04d77fd16256c94d268d3950d272fd89",
+      "txHash": "0xd253aba9cfa2ece961e6d32c70fc464677e5b2e58e97e4b4449e7f921a4af7db",
       "kind": "uups"
     }
   ],
   "impls": {
-    "a3b689eb1c18583a07632a7809b11ea5817b14d208bfea4a0881ef1764b95f93": {
+    "5e7c4ac544a8550de90273436195b9201798c6e8e9d10948919393a3bc2e2f97": {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0xcd48fb0075f4a893beee5682aff074e18d4f9b17234272efcca5ef9627cbb999",
+      "txHash": "0x7df0c692e15e62001ebc4be46028f7ec4c3226ef8b3bad029682e140107d5f49",
       "layout": {
         "storage": [
           {
@@ -113,7 +113,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)6595_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6670_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv2",
             "src": "contracts\\abstract\\ReaperBaseStrategyv2.sol:27"
           },
@@ -211,15 +211,15 @@
             "slot": "363",
             "type": "t_address",
             "contract": "ReaperStrategyBeethovenMorSteadyBeets",
-            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:39"
+            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:41"
           },
           {
             "label": "underlyings",
             "offset": 0,
             "slot": "364",
-            "type": "t_array(t_contract(IAsset)7382)dyn_storage",
+            "type": "t_array(t_contract(IAsset)7457)dyn_storage",
             "contract": "ReaperStrategyBeethovenMorSteadyBeets",
-            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:40"
+            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:42"
           },
           {
             "label": "mcPoolId",
@@ -227,7 +227,7 @@
             "slot": "365",
             "type": "t_uint256",
             "contract": "ReaperStrategyBeethovenMorSteadyBeets",
-            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:53"
+            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:55"
           },
           {
             "label": "beetsPoolId",
@@ -235,7 +235,15 @@
             "slot": "366",
             "type": "t_bytes32",
             "contract": "ReaperStrategyBeethovenMorSteadyBeets",
-            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:54"
+            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:56"
+          },
+          {
+            "label": "minBeetsToSwap",
+            "offset": 0,
+            "slot": "367",
+            "type": "t_uint256",
+            "contract": "ReaperStrategyBeethovenMorSteadyBeets",
+            "src": "contracts\\ReaperStrategyBeethovenMorSteadyBeets.sol:57"
           }
         ],
         "types": {
@@ -247,11 +255,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_contract(IAsset)7382)dyn_storage": {
+          "t_array(t_contract(IAsset)7457)dyn_storage": {
             "label": "contract IAsset[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)6595_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6670_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -271,7 +279,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IAsset)7382": {
+          "t_contract(IAsset)7457": {
             "label": "contract IAsset",
             "numberOfBytes": "20"
           },
@@ -303,7 +311,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)6595_storage": {
+          "t_struct(Harvest)6670_storage": {
             "label": "struct ReaperBaseStrategyv2.Harvest",
             "members": [
               {
