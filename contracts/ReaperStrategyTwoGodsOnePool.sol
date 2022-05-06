@@ -59,6 +59,11 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         ChargeFees
     }
 
+    enum StepPercentageType {
+        Absolute,
+        TotalFee
+    }
+
     struct StepTypeWithData {
         HarvestStepType stepType;
         bytes data; // abi encoded, decodes to {SwapStep} or {ChargeFeesStep}
@@ -67,11 +72,13 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     struct SwapStep {
         address startToken;
         address endToken;
+        StepPercentageType percentageType;
         uint256 percentage; // in basis points precision
     }
 
     struct ChargeFeesStep {
         address feesToken;
+        StepPercentageType percentageType;
         uint256 percentage; // in basis points precision
     }
 
@@ -156,7 +163,8 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         SwapStep memory step = abi.decode(_data, (SwapStep));
 
         IERC20Upgradeable startToken = IERC20Upgradeable(step.startToken);
-        uint256 amount = (startToken.balanceOf(address(this)) * step.percentage) / PERCENT_DIVISOR;
+        uint256 percentage = _getStepPercentage(step.percentageType, step.percentage);
+        uint256 amount = (startToken.balanceOf(address(this)) * percentage) / PERCENT_DIVISOR;
         if (amount != 0) {
             startToken.safeIncreaseAllowance(SWAPPER, amount);
             ISwapper(SWAPPER).swap(step.startToken, step.endToken, amount);
@@ -167,7 +175,8 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         ChargeFeesStep memory step = abi.decode(_data, (ChargeFeesStep));
 
         IERC20Upgradeable feesToken = IERC20Upgradeable(step.feesToken);
-        uint256 amount = (feesToken.balanceOf(address(this)) * step.percentage) / PERCENT_DIVISOR;
+        uint256 percentage = _getStepPercentage(step.percentageType, step.percentage);
+        uint256 amount = (feesToken.balanceOf(address(this)) * percentage) / PERCENT_DIVISOR;
         if (amount != 0) {
             uint256 callFeeToUser = (amount * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (amount * treasuryFee) / PERCENT_DIVISOR;
@@ -177,6 +186,18 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
             feesToken.safeTransfer(msg.sender, callFeeToUser);
             feesToken.safeTransfer(treasury, treasuryFeeToVault);
             feesToken.safeTransfer(strategistRemitter, feeToStrategist);
+        }
+    }
+
+    function _getStepPercentage(StepPercentageType _type, uint256 _rawPercentage)
+        internal
+        view
+        returns (uint256 percentage)
+    {
+        if (_type == StepPercentageType.TotalFee) {
+            percentage = totalFee;
+        } else {
+            percentage = _rawPercentage;
         }
     }
 
