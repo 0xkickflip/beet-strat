@@ -18,9 +18,6 @@ interface IStrategy {
     //returns the approx amount of profit from harvesting plus fee returned to harvest caller.
     function estimateHarvest() external view returns (uint256 profit, uint256 callFeeToUser);
 
-    //withdraws all tokens and sends them back to the vault
-    function retireStrat() external;
-
     //pauses deposits, resets allowances, and withdraws all funds from farm
     function panic() external;
 

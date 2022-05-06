@@ -9,6 +9,7 @@ import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IDeusRewarder.sol";
 import "./interfaces/IMasterChef.sol";
+import "./interfaces/ISwapper.sol";
 import "./interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
@@ -20,6 +21,7 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
+    address public constant SWAPPER = address(0xBE4365B3B90390F3BbC398cC5e98b62Da6595bAF);
     address public constant BEET_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
     address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
@@ -51,6 +53,29 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
     uint256 public deusPosition;
+
+    enum HarvestStepType {
+        Swap,
+        ChargeFees
+    }
+
+    struct StepTypeWithData {
+        HarvestStepType stepType;
+        bytes data; // abi encoded, decodes to {SwapStep} or {ChargeFeesStep}
+    }
+
+    struct SwapStep {
+        address startToken;
+        address endToken;
+        uint256 percentage; // in basis points precision
+    }
+
+    struct ChargeFeesStep {
+        address feesToken;
+        uint256 percentage; // in basis points precision
+    }
+
+    StepTypeWithData[] public steps;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -113,103 +138,45 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
      */
     function _harvestCore() internal override {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _performSwapsAndChargeFees();
-        _routerSwap(WFTM, DEUS, IERC20Upgradeable(WFTM).balanceOf(address(this)), SPIRIT_ROUTER);
+
+        uint256 numSteps = steps.length;
+        for (uint256 i = 0; i < numSteps; i++) {
+            if (steps[i].stepType == HarvestStepType.Swap) {
+                _executeSwapStep(steps[i].data);
+            } else if (steps[i].stepType == HarvestStepType.ChargeFees) {
+                _executeChargeFeesStep(steps[i].data);
+            }
+        }
+
         _joinPool();
         deposit();
     }
 
-    /**
-     * @dev Core harvest function.
-     *      Charges fees based on the amount of WFTM gained from reward
-     */
-    function _performSwapsAndChargeFees() internal {
-        IERC20Upgradeable wftm = IERC20Upgradeable(WFTM);
-        uint256 startingWftmBal = wftm.balanceOf(address(this));
-        uint256 wftmFee = 0;
+    function _executeSwapStep(bytes storage _data) internal {
+        SwapStep memory step = abi.decode(_data, (SwapStep));
 
-        _routerSwap(
-            DEUS,
-            WFTM,
-            (IERC20Upgradeable(DEUS).balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            SPIRIT_ROUTER
-        );
-        wftmFee += wftm.balanceOf(address(this)) - startingWftmBal;
-        startingWftmBal = wftm.balanceOf(address(this));
+        IERC20Upgradeable startToken = IERC20Upgradeable(step.startToken);
+        uint256 amount = (startToken.balanceOf(address(this)) * step.percentage) / PERCENT_DIVISOR;
+        if (amount != 0) {
+            startToken.safeIncreaseAllowance(SWAPPER, amount);
+            ISwapper(SWAPPER).swap(step.startToken, step.endToken, amount);
+        }
+    }
 
-        _beethovenSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
-        wftmFee += ((wftm.balanceOf(address(this)) - startingWftmBal) * totalFee) / PERCENT_DIVISOR;
+    function _executeChargeFeesStep(bytes storage _data) internal {
+        ChargeFeesStep memory step = abi.decode(_data, (ChargeFeesStep));
 
-        if (wftmFee != 0) {
-            uint256 callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
-            uint256 treasuryFeeToVault = (wftmFee * treasuryFee) / PERCENT_DIVISOR;
+        IERC20Upgradeable feesToken = IERC20Upgradeable(step.feesToken);
+        uint256 amount = (feesToken.balanceOf(address(this)) * step.percentage) / PERCENT_DIVISOR;
+        if (amount != 0) {
+            uint256 callFeeToUser = (amount * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (amount * treasuryFee) / PERCENT_DIVISOR;
             uint256 feeToStrategist = (treasuryFeeToVault * strategistFee) / PERCENT_DIVISOR;
             treasuryFeeToVault -= feeToStrategist;
 
-            wftm.safeTransfer(msg.sender, callFeeToUser);
-            wftm.safeTransfer(treasury, treasuryFeeToVault);
-            wftm.safeTransfer(strategistRemitter, feeToStrategist);
-        }
-    }
-
-    /**
-     * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
-     */
-    function _beethovenSwap(
-        address _from,
-        address _to,
-        uint256 _amount,
-        bytes32 _poolId
-    ) internal {
-        if (_from == _to || _amount == 0) {
-            return;
-        }
-
-        IBeetVault.SingleSwap memory singleSwap;
-        singleSwap.poolId = _poolId;
-        singleSwap.kind = IBeetVault.SwapKind.GIVEN_IN;
-        singleSwap.assetIn = IAsset(_from);
-        singleSwap.assetOut = IAsset(_to);
-        singleSwap.amount = _amount;
-        singleSwap.userData = abi.encode(0);
-
-        IBeetVault.FundManagement memory funds;
-        funds.sender = address(this);
-        funds.fromInternalBalance = false;
-        funds.recipient = payable(address(this));
-        funds.toInternalBalance = false;
-
-        IERC20Upgradeable(_from).safeIncreaseAllowance(BEET_VAULT, _amount);
-        IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
-    }
-
-    /**
-     * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_router}.
-     */
-    function _routerSwap(
-        address _from,
-        address _to,
-        uint256 _amount,
-        address _router
-    ) internal {
-        if (_from == _to || _amount == 0) {
-            return;
-        }
-
-        IUniswapV2Router02 router = IUniswapV2Router02(_router);
-        address[] memory path = new address[](2);
-        path[0] = _from;
-        path[1] = _to;
-
-        if (router.getAmountsOut(_amount, path)[1] != 0) {
-            IERC20Upgradeable(_from).safeIncreaseAllowance(_router, _amount);
-            router.swapExactTokensForTokensSupportingFeeOnTransferTokens(
-                _amount,
-                0,
-                path,
-                address(this),
-                block.timestamp
-            );
+            feesToken.safeTransfer(msg.sender, callFeeToUser);
+            feesToken.safeTransfer(treasury, treasuryFeeToVault);
+            feesToken.safeTransfer(strategistRemitter, feeToStrategist);
         }
     }
 
@@ -281,30 +248,6 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         uint256 wftmFee = (profit * totalFee) / PERCENT_DIVISOR;
         callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
         profit -= wftmFee;
-    }
-
-    /**
-     * @dev Function to retire the strategy. Claims all rewards and withdraws
-     *      all principal from external contracts, and sends everything back to
-     *      the vault. Can only be called by strategist or owner.
-     *
-     * Note: this is not an emergency withdraw function. For that, see panic().
-     */
-    function _retireStrat() internal override {
-        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _beethovenSwap(BEETS, WFTM, IERC20Upgradeable(BEETS).balanceOf(address(this)), WFTM_BEETS_POOL);
-        _routerSwap(WFTM, DEUS, IERC20Upgradeable(WFTM).balanceOf(address(this)), SPIRIT_ROUTER);
-        _joinPool();
-
-        (uint256 poolBal, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
-        if (poolBal != 0) {
-            IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, poolBal, address(this));
-        }
-
-        uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
-        if (wantBalance != 0) {
-            IERC20Upgradeable(want).safeTransfer(vault, wantBalance);
-        }
     }
 
     /**
