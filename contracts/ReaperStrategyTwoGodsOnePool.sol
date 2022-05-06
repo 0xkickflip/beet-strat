@@ -201,6 +201,48 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         }
     }
 
+    function addSwapStep(
+        address _startToken,
+        address _endToken,
+        StepPercentageType _percentageType,
+        uint256 percentage
+    ) external whenPaused {
+        _onlyStrategistOrOwner();
+        require(_startToken != address(0));
+        require(_endToken != address(0));
+        require(_startToken != _endToken);
+
+        if (_percentageType == StepPercentageType.Absolute) {
+            require(percentage != 0);
+            require(percentage <= PERCENT_DIVISOR);
+        }
+
+        bytes memory data = abi.encode(SwapStep(_startToken, _endToken, _percentageType, percentage));
+        steps.push(StepTypeWithData(HarvestStepType.Swap, data));
+    }
+
+    function addChargeFeesStep(
+        address _feesToken,
+        StepPercentageType _percentageType,
+        uint256 percentage
+    ) external whenPaused {
+        _onlyStrategistOrOwner();
+        require(_feesToken != address(0));
+
+        if (_percentageType == StepPercentageType.Absolute) {
+            require(percentage != 0);
+            require(percentage <= PERCENT_DIVISOR);
+        }
+
+        bytes memory data = abi.encode(ChargeFeesStep(_feesToken, _percentageType, percentage));
+        steps.push(StepTypeWithData(HarvestStepType.ChargeFees, data));
+    }
+
+    function popStep() external whenPaused {
+        _onlyStrategistOrOwner();
+        steps.pop();
+    }
+
     /**
      * @dev Core harvest function. Joins {beetsPoolId} using {DEUS} balance;
      */
