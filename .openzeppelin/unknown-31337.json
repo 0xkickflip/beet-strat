@@ -8,7 +8,7 @@
     },
     {
       "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
-      "txHash": "0x3e0f6649f1ae7aac2df922182fb18a2a540166d0ba7593b24fdcc77f1baecfba",
+      "txHash": "0xf380956588b664ed1d3615c3563ed87f5b3c80f93f08535a2e52623edbf5c3c4",
       "kind": "uups"
     }
   ],
@@ -287,9 +287,9 @@
         }
       }
     },
-    "04e85d373ae840a94f280352af6831b571d955c8cf5bd77890a650e4b810dac5": {
+    "4a63e11488e112448066c7369d601775e4430e704441f4c16af2f838f151cc95": {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0x5ad9660a590425ee41e0d4b6a11d437f8612bb31d9513a057633961b7d76bada",
+      "txHash": "0x356c0a10d47f86b3a885451ecc28f1b802d534b067fb71ff4a69f771889bfc98",
       "layout": {
         "storage": [
           {
@@ -367,7 +367,7 @@
           {
             "contract": "ReaperBaseStrategyv1_1",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)6728_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6751_storage)dyn_storage",
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:27"
           },
           {
@@ -445,7 +445,7 @@
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "underlyings",
-            "type": "t_array(t_contract(IAsset)7535)dyn_storage",
+            "type": "t_array(t_contract(IAsset)7558)dyn_storage",
             "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:33"
           },
           {
@@ -471,16 +471,22 @@
             "label": "steps",
             "type": "t_array(t_struct(StepTypeWithData)5180_storage)dyn_storage",
             "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:73"
+          },
+          {
+            "contract": "ReaperStrategyTwoGodsOnePool",
+            "label": "ignoreClaimRewardsError",
+            "type": "t_bool",
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:75"
           }
         ],
         "types": {
           "t_address": {
             "label": "address"
           },
-          "t_array(t_contract(IAsset)7535)dyn_storage": {
+          "t_array(t_contract(IAsset)7558)dyn_storage": {
             "label": "contract IAsset[]"
           },
-          "t_contract(IAsset)7535": {
+          "t_contract(IAsset)7558": {
             "label": "contract IAsset"
           },
           "t_uint256": {
@@ -515,10 +521,13 @@
           "t_bytes_storage": {
             "label": "bytes"
           },
-          "t_array(t_struct(Harvest)6728_storage)dyn_storage": {
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_array(t_struct(Harvest)6751_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest[]"
           },
-          "t_struct(Harvest)6728_storage": {
+          "t_struct(Harvest)6751_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest",
             "members": [
               {
@@ -530,9 +539,6 @@
                 "type": "t_uint256"
               }
             ]
-          },
-          "t_bool": {
-            "label": "bool"
           },
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]"

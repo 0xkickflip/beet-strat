@@ -72,6 +72,8 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
 
     StepTypeWithData[] public steps;
 
+    bool public ignoreClaimRewardsError;
+
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
      * @notice see documentation for each variable above its respective declaration.
@@ -132,7 +134,9 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
      *      5. Deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
-        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
+        try IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this)) {} catch {
+            require(ignoreClaimRewardsError);
+        }
 
         uint256 numSteps = steps.length;
         for (uint256 i = 0; i < numSteps; i++) {
@@ -229,6 +233,11 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     function popStep() external whenPaused {
         _onlyStrategistOrOwner();
         steps.pop();
+    }
+
+    function setIgnoreClaimRewardsError(bool _ignoreClaimRewardsError) external {
+        _onlyStrategistOrOwner();
+        ignoreClaimRewardsError = _ignoreClaimRewardsError;
     }
 
     /**
