@@ -8,7 +8,7 @@
     },
     {
       "address": "0x8198f5d8F8CfFE8f9C413d98a0A55aEB8ab9FbB7",
-      "txHash": "0xec85168a130a29c87879515276c6718f0ece14c092543124b92cfc8cf8cd9607",
+      "txHash": "0x3e0f6649f1ae7aac2df922182fb18a2a540166d0ba7593b24fdcc77f1baecfba",
       "kind": "uups"
     }
   ],
@@ -287,9 +287,9 @@
         }
       }
     },
-    "de01d3f5efcd4c04f8638e6b8a8479a9261e3fa501280c5ebc73b52f3971a663": {
+    "04e85d373ae840a94f280352af6831b571d955c8cf5bd77890a650e4b810dac5": {
       "address": "0x36b58F5C1969B7b6591D752ea6F5486D069010AB",
-      "txHash": "0x4f2f8514ba17d6df33d51c74fe85b2c5aee536e4f47451921119c6cc3b701d31",
+      "txHash": "0x5ad9660a590425ee41e0d4b6a11d437f8612bb31d9513a057633961b7d76bada",
       "layout": {
         "storage": [
           {
@@ -343,7 +343,7 @@
           {
             "contract": "AccessControlEnumerableUpgradeable",
             "label": "_roleMembers",
-            "type": "t_mapping(t_bytes32,t_struct(AddressSet)3225_storage)",
+            "type": "t_mapping(t_bytes32,t_struct(AddressSet)3137_storage)",
             "src": "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol:22"
           },
           {
@@ -367,7 +367,7 @@
           {
             "contract": "ReaperBaseStrategyv1_1",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)7031_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6728_storage)dyn_storage",
             "src": "contracts/abstract/ReaperBaseStrategyv1_1.sol:27"
           },
           {
@@ -440,47 +440,47 @@
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "want",
             "type": "t_address",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:41"
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:32"
           },
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "underlyings",
-            "type": "t_array(t_contract(IAsset)7832)dyn_storage",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:42"
+            "type": "t_array(t_contract(IAsset)7535)dyn_storage",
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:33"
           },
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "mcPoolId",
             "type": "t_uint256",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:53"
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:41"
           },
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "beetsPoolId",
             "type": "t_bytes32",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:54"
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:42"
           },
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "deusPosition",
             "type": "t_uint256",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:55"
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:43"
           },
           {
             "contract": "ReaperStrategyTwoGodsOnePool",
             "label": "steps",
-            "type": "t_array(t_struct(StepTypeWithData)5298_storage)dyn_storage",
-            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:85"
+            "type": "t_array(t_struct(StepTypeWithData)5180_storage)dyn_storage",
+            "src": "contracts/ReaperStrategyTwoGodsOnePool.sol:73"
           }
         ],
         "types": {
           "t_address": {
             "label": "address"
           },
-          "t_array(t_contract(IAsset)7832)dyn_storage": {
+          "t_array(t_contract(IAsset)7535)dyn_storage": {
             "label": "contract IAsset[]"
           },
-          "t_contract(IAsset)7832": {
+          "t_contract(IAsset)7535": {
             "label": "contract IAsset"
           },
           "t_uint256": {
@@ -489,15 +489,15 @@
           "t_bytes32": {
             "label": "bytes32"
           },
-          "t_array(t_struct(StepTypeWithData)5298_storage)dyn_storage": {
+          "t_array(t_struct(StepTypeWithData)5180_storage)dyn_storage": {
             "label": "struct ReaperStrategyTwoGodsOnePool.StepTypeWithData[]"
           },
-          "t_struct(StepTypeWithData)5298_storage": {
+          "t_struct(StepTypeWithData)5180_storage": {
             "label": "struct ReaperStrategyTwoGodsOnePool.StepTypeWithData",
             "members": [
               {
                 "label": "stepType",
-                "type": "t_enum(HarvestStepType)5289"
+                "type": "t_enum(HarvestStepType)5171"
               },
               {
                 "label": "data",
@@ -505,7 +505,7 @@
               }
             ]
           },
-          "t_enum(HarvestStepType)5289": {
+          "t_enum(HarvestStepType)5171": {
             "label": "enum ReaperStrategyTwoGodsOnePool.HarvestStepType",
             "members": [
               "Swap",
@@ -515,10 +515,10 @@
           "t_bytes_storage": {
             "label": "bytes"
           },
-          "t_array(t_struct(Harvest)7031_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6728_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest[]"
           },
-          "t_struct(Harvest)7031_storage": {
+          "t_struct(Harvest)6728_storage": {
             "label": "struct ReaperBaseStrategyv1_1.Harvest",
             "members": [
               {
@@ -537,19 +537,19 @@
           "t_array(t_uint256)49_storage": {
             "label": "uint256[49]"
           },
-          "t_mapping(t_bytes32,t_struct(AddressSet)3225_storage)": {
+          "t_mapping(t_bytes32,t_struct(AddressSet)3137_storage)": {
             "label": "mapping(bytes32 => struct EnumerableSetUpgradeable.AddressSet)"
           },
-          "t_struct(AddressSet)3225_storage": {
+          "t_struct(AddressSet)3137_storage": {
             "label": "struct EnumerableSetUpgradeable.AddressSet",
             "members": [
               {
                 "label": "_inner",
-                "type": "t_struct(Set)2924_storage"
+                "type": "t_struct(Set)2836_storage"
               }
             ]
           },
-          "t_struct(Set)2924_storage": {
+          "t_struct(Set)2836_storage": {
             "label": "struct EnumerableSetUpgradeable.Set",
             "members": [
               {

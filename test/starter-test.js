@@ -34,13 +34,14 @@ describe('Vaults', function () {
   let Want;
   let want;
   let beets;
+  let dai;
 
   const treasuryAddr = '0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b';
   const paymentSplitterAddress = '0x63cbd4134c2253041F370472c130e92daE4Ff174';
   const wantAddress = '0x0e8e7307E43301CF28c5d21d5fD3EF0876217D41';
   const mcPoolId = 76;
 
-  const wantHolderAddr = '0xaBBf75A59AC8838FA46bd5260501B68ab28B95f6';
+  const wantHolderAddr = '0x06355362cd8AB65f6349535D0aAC83Dd911C3d54';
   const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
   const beetsAddress = '0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e';
@@ -61,8 +62,8 @@ describe('Vaults', function () {
       params: [
         {
           forking: {
-            jsonRpcUrl: 'https://rpc.ftm.tools/',
-            blockNumber: 37702552,
+            jsonRpcUrl: 'https://rpcapi-tracing.fantom.network/',
+            blockNumber: 37848216,
           },
         },
       ],
@@ -113,6 +114,7 @@ describe('Vaults', function () {
     await strategy.unpause();
 
     want = await Want.attach(wantAddress);
+    dai = await Want.attach(daiAddress);
 
     //approving LP token and vault share spend
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
@@ -271,14 +273,24 @@ describe('Vaults', function () {
     });
 
     it('should be able to harvest', async function () {
-      await vault.connect(wantHolder).deposit(toWantUnit('35'));
+      await vault.connect(wantHolder).deposit(toWantUnit('30'));
       await moveBlocksForward(100);
-      await strategy.harvest();
+      const readOnlyStrat = await strategy.connect(ethers.provider);
+      const predictedCallerFee = await readOnlyStrat.callStatic.harvest();
+      console.log(`predicted caller fee ${ethers.utils.formatEther(predictedCallerFee)}`);
+
+      const daiBalBefore = await dai.balanceOf(owner.address);
+      const tx = await strategy.harvest();
+      const receipt = await tx.wait();
+      console.log(`gas used ${receipt.gasUsed}`);
+      const daiBalAfter = await dai.balanceOf(owner.address);
+      const daiBalDifference = daiBalAfter.sub(daiBalBefore);
+      console.log(`actual caller fee ${ethers.utils.formatEther(daiBalDifference)}`);
     });
 
     it('should provide yield', async function () {
       const timeToSkip = 3600;
-      await vault.connect(wantHolder).deposit(toWantUnit('35'));
+      await vault.connect(wantHolder).deposit(toWantUnit('30'));
       const initialVaultBalance = await vault.balance();
 
       await strategy.updateHarvestLogCadence(1);
@@ -318,20 +330,6 @@ describe('Vaults', function () {
       const wantStratBalance = await want.balanceOf(strategy.address);
       const allowedImprecision = toWantUnit('0.000000001');
       expect(strategyBalance).to.be.closeTo(wantStratBalance, allowedImprecision);
-    });
-
-    it('should be able to estimate harvest', async function () {
-      const whaleDepositAmount = toWantUnit('10');
-      await vault.connect(wantHolder).deposit(whaleDepositAmount);
-      await moveBlocksForward(100);
-      await strategy.harvest();
-      await moveBlocksForward(100);
-      const [profit, callFeeToUser] = await strategy.estimateHarvest();
-      console.log(`profit: ${profit}`);
-      const hasProfit = profit.gt(0);
-      const hasCallFee = callFeeToUser.gt(0);
-      expect(hasProfit).to.equal(true);
-      expect(hasCallFee).to.equal(true);
     });
   });
 });

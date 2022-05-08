@@ -9,14 +9,11 @@ interface IStrategy {
     //vault only - withdraws funds from the strategy
     function withdraw(uint256 _amount) external;
 
-    //claims farmed tokens, distributes fees, and sells tokens to re-add to the LP & farm
-    function harvest() external;
+    //claims rewards, charges fees, and re-deposits; returns caller fee amount.
+    function harvest() external returns (uint256);
 
     //returns the balance of all tokens managed by the strategy
     function balanceOf() external view returns (uint256);
-
-    //returns the approx amount of profit from harvesting plus fee returned to harvest caller.
-    function estimateHarvest() external view returns (uint256 profit, uint256 callFeeToUser);
 
     //pauses deposits, resets allowances, and withdraws all funds from farm
     function panic() external;

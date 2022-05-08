@@ -149,8 +149,8 @@ abstract contract ReaperBaseStrategyv1_1 is
      * @dev harvest() function that takes care of logging. Subcontracts should
      *      override _harvestCore() and implement their specific logic in it.
      */
-    function harvest() external override whenNotPaused {
-        _harvestCore();
+    function harvest() external override whenNotPaused returns (uint256 callerFee) {
+        callerFee = _harvestCore();
 
         if (block.timestamp >= harvestLog[harvestLog.length - 1].timestamp + harvestLogCadence) {
             harvestLog.push(
@@ -373,9 +373,10 @@ abstract contract ReaperBaseStrategyv1_1 is
 
     /**
      * @dev subclasses should add their custom harvesting logic in this function
-     *      including charging any fees.
+     *      including charging any fees. The amount of fee that is remitted to the
+     *      caller must be returned.
      */
-    function _harvestCore() internal virtual;
+    function _harvestCore() internal virtual returns (uint256);
 
     /**
      * @dev subclasses should add their custom logic to withdraw the principal from

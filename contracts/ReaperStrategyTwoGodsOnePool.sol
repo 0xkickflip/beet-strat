@@ -7,12 +7,9 @@ import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
-import "./interfaces/IDeusRewarder.sol";
 import "./interfaces/IMasterChef.sol";
 import "./interfaces/ISwapper.sol";
-import "./interfaces/IUniswapV2Router02.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
@@ -21,34 +18,25 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
-    address public constant SWAPPER = address(0xBE4365B3B90390F3BbC398cC5e98b62Da6595bAF);
+    address public constant SWAPPER = address(0x2be28c629D11e5cBE4a7F59B48b1F7270B7A760c);
     address public constant BEET_VAULT = address(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
     address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
-    address public constant SPOOKY_ROUTER = address(0xF491e7B69E4244ad4002BC14e878a34207E38c29);
-    address public constant SPIRIT_ROUTER = address(0x16327E3FbDaCA3bcF7E38F5Af2599D2DDc33aE52);
 
     /**
      * @dev Tokens Used:
-     * {BEETS} - Reward token for depositing LP into MasterChef.
      * {DEUS} - Secondary reward token for depositing LP into MasterChef. Also used to join pool.
-     * {WFTM} - Required for liquidity routing when doing swaps.
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
-    address public constant BEETS = address(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
     address public constant DEUS = address(0xDE5ed76E7c05eC5e4572CfC88d1ACEA165109E44);
-    address public constant WFTM = address(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
     address public want;
     IAsset[] underlyings;
-
-    // pools used to swap tokens
-    bytes32 public constant WFTM_BEETS_POOL = 0xcde5a11a4acb4ee4c805352cec57e236bdbc3837000200000000000000000019;
 
     /**
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {deiPosition} - Index of {DEUS} in the Beethoven-X pool
+     * {deusPosition} - Index of {DEUS} in the Beethoven-X pool
      */
     uint256 public mcPoolId;
     bytes32 public beetsPoolId;
@@ -143,7 +131,7 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
      *      4. Joins {beetsPoolId} using {DEUS}.
      *      5. Deposits.
      */
-    function _harvestCore() internal override {
+    function _harvestCore() internal override returns (uint256 callerFee) {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
 
         uint256 numSteps = steps.length;
@@ -151,7 +139,7 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
             if (steps[i].stepType == HarvestStepType.Swap) {
                 _executeSwapStep(steps[i].data);
             } else if (steps[i].stepType == HarvestStepType.ChargeFees) {
-                _executeChargeFeesStep(steps[i].data);
+                callerFee += _executeChargeFeesStep(steps[i].data);
             }
         }
 
@@ -171,14 +159,14 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
         }
     }
 
-    function _executeChargeFeesStep(bytes storage _data) internal {
+    function _executeChargeFeesStep(bytes storage _data) internal returns (uint256 callFeeToUser) {
         ChargeFeesStep memory step = abi.decode(_data, (ChargeFeesStep));
 
         IERC20Upgradeable feesToken = IERC20Upgradeable(step.feesToken);
         uint256 percentage = _getStepPercentage(step.percentageType, step.percentage);
         uint256 amount = (feesToken.balanceOf(address(this)) * percentage) / PERCENT_DIVISOR;
         if (amount != 0) {
-            uint256 callFeeToUser = (amount * callFee) / PERCENT_DIVISOR;
+            callFeeToUser = (amount * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (amount * treasuryFee) / PERCENT_DIVISOR;
             uint256 feeToStrategist = (treasuryFeeToVault * strategistFee) / PERCENT_DIVISOR;
             treasuryFeeToVault -= feeToStrategist;
@@ -275,42 +263,6 @@ contract ReaperStrategyTwoGodsOnePool is ReaperBaseStrategyv1_1 {
     function balanceOf() public view override returns (uint256) {
         (uint256 amount, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
         return amount + IERC20Upgradeable(want).balanceOf(address(this));
-    }
-
-    /**
-     * @dev Returns the approx amount of profit from harvesting.
-     *      Profit is denominated in WFTM, and takes fees into account.
-     */
-    function estimateHarvest() external view override returns (uint256 profit, uint256 callFeeToUser) {
-        IMasterChef masterChef = IMasterChef(MASTER_CHEF);
-        IDeusRewarder rewarder = IDeusRewarder(masterChef.rewarder(mcPoolId));
-
-        // {BEETS} reward
-        uint256 pendingReward = masterChef.pendingBeets(mcPoolId, address(this));
-        uint256 totalRewards = pendingReward + IERC20Upgradeable(BEETS).balanceOf(address(this));
-        if (totalRewards != 0) {
-            // use SPOOKY_ROUTER here since IBeetVault doesn't have a view query function
-            address[] memory beetsToWftmPath = new address[](2);
-            beetsToWftmPath[0] = BEETS;
-            beetsToWftmPath[1] = WFTM;
-            profit += IUniswapV2Router02(SPOOKY_ROUTER).getAmountsOut(totalRewards, beetsToWftmPath)[1];
-        }
-
-        // {DEUS} reward
-        pendingReward = rewarder.pendingToken(mcPoolId, address(this));
-        totalRewards = pendingReward + IERC20Upgradeable(DEUS).balanceOf(address(this));
-        if (totalRewards != 0) {
-            address[] memory deusToWftmPath = new address[](2);
-            deusToWftmPath[0] = DEUS;
-            deusToWftmPath[1] = WFTM;
-            profit += IUniswapV2Router02(SPIRIT_ROUTER).getAmountsOut(totalRewards, deusToWftmPath)[1];
-        }
-
-        profit += IERC20Upgradeable(WFTM).balanceOf(address(this));
-
-        uint256 wftmFee = (profit * totalFee) / PERCENT_DIVISOR;
-        callFeeToUser = (wftmFee * callFee) / PERCENT_DIVISOR;
-        profit -= wftmFee;
     }
 
     /**
