@@ -9,7 +9,7 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-abstract contract ReaperBaseStrategyv1_1 is
+abstract contract ReaperBaseStrategyv3 is
     IStrategy,
     UUPSUpgradeable,
     AccessControlEnumerableUpgradeable,
@@ -31,10 +31,24 @@ abstract contract ReaperBaseStrategyv1_1 is
     uint256 public upgradeProposalTime;
 
     /**
-     * Reaper Roles
+     * Reaper Roles in increasing order of privilege.
+     * {KEEPER} - Stricly permissioned trustless access for off-chain programs or third party keepers.
+     * {STRATEGIST} - Role conferred to authors of the strategy, allows for tweaking non-critical params.
+     * {GUARDIAN} - Multisig requiring 2 signatures for emergency measures such as pausing and panicking.
+     * {ADMIN}- Multisig requiring 3 signatures for unpausing.
+     *
+     * The DEFAULT_ADMIN_ROLE (in-built access control role) will be granted to a multisig requiring 4
+     * signatures. This role would have upgrading capability, as well as the ability to grant any other
+     * roles.
+     *
+     * Also note that roles are cascading. So any higher privileged role should be able to perform all the functions
+     * of any lower privileged role.
      */
+    bytes32 public constant KEEPER = keccak256("KEEPER");
     bytes32 public constant STRATEGIST = keccak256("STRATEGIST");
-    bytes32 public constant STRATEGIST_MULTISIG = keccak256("STRATEGIST_MULTISIG");
+    bytes32 public constant GUARDIAN = keccak256("GUARDIAN");
+    bytes32 public constant ADMIN = keccak256("ADMIN");
+    bytes32[] private cascadingAccess;
 
     /**
      * @dev Reaper contracts:
@@ -93,7 +107,8 @@ abstract contract ReaperBaseStrategyv1_1 is
     function __ReaperBaseStrategy_init(
         address _vault,
         address[] memory _feeRemitters,
-        address[] memory _strategists
+        address[] memory _strategists,
+        address[] memory _multisigRoles
     ) internal onlyInitializing {
         __UUPSUpgradeable_init();
         __AccessControlEnumerable_init();
@@ -106,9 +121,6 @@ abstract contract ReaperBaseStrategyv1_1 is
         strategistFee = 2500;
         securityFee = 10;
 
-        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        clearUpgradeCooldown();
-
         vault = _vault;
         treasury = _feeRemitters[0];
         strategistRemitter = _feeRemitters[1];
@@ -117,6 +129,13 @@ abstract contract ReaperBaseStrategyv1_1 is
             _grantRole(STRATEGIST, _strategists[i]);
         }
 
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(DEFAULT_ADMIN_ROLE, _multisigRoles[0]);
+        _grantRole(ADMIN, _multisigRoles[1]);
+        _grantRole(GUARDIAN, _multisigRoles[2]);
+
+        cascadingAccess = [DEFAULT_ADMIN_ROLE, ADMIN, GUARDIAN, STRATEGIST, KEEPER];
+        clearUpgradeCooldown();
         harvestLog.push(Harvest({timestamp: block.timestamp, vaultSharePrice: IVault(_vault).getPricePerFullShare()}));
     }
 
@@ -135,9 +154,9 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      is deducted up-front.
      */
     function withdraw(uint256 _amount) external override {
-        require(msg.sender == vault, "!vault");
-        require(_amount != 0, "invalid amount");
-        require(_amount <= balanceOf(), "invalid amount");
+        require(msg.sender == vault);
+        require(_amount != 0);
+        require(_amount <= balanceOf());
 
         uint256 withdrawFee = (_amount * securityFee) / PERCENT_DIVISOR;
         _amount -= withdrawFee;
@@ -172,7 +191,7 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      log entries. APR is multiplied by PERCENT_DIVISOR to retain precision.
      */
     function averageAPRAcrossLastNHarvests(int256 _n) external view returns (int256) {
-        require(harvestLog.length >= 2, "need at least 2 log entries");
+        require(harvestLog.length >= 2);
 
         int256 runningAPRSum;
         int256 numLogsProcessed;
@@ -186,10 +205,10 @@ abstract contract ReaperBaseStrategyv1_1 is
     }
 
     /**
-     * @dev Only strategist or owner can edit the log cadence.
+     * @dev Strategists and roles with higher privilege can edit the log cadence.
      */
     function updateHarvestLogCadence(uint256 _newCadenceInSeconds) external {
-        _onlyStrategistOrOwner();
+        _atLeastRole(STRATEGIST);
         harvestLogCadence = _newCadenceInSeconds;
     }
 
@@ -200,40 +219,40 @@ abstract contract ReaperBaseStrategyv1_1 is
     function balanceOf() public view virtual override returns (uint256);
 
     /**
-     * @dev Pauses deposits. Withdraws all funds leaving rewards behind
+     * @dev Pauses deposits. Withdraws all funds leaving rewards behind.
+     *      Guardian and roles with higher privilege can panic.
      */
     function panic() external override {
-        _onlyStrategistOrOwner();
+        _atLeastRole(GUARDIAN);
         _reclaimWant();
         pause();
     }
 
     /**
      * @dev Pauses the strat. Deposits become disabled but users can still
-     *      withdraw. Removes allowances of external contracts.
+     *      withdraw. Guardian and roles with higher privilege can pause.
      */
     function pause() public override {
-        _onlyStrategistOrOwner();
+        _atLeastRole(GUARDIAN);
         _pause();
-        _removeAllowances();
     }
 
     /**
      * @dev Unpauses the strat. Opens up deposits again and invokes deposit().
-     *      Reinstates allowances for external contracts.
+     *      Admin and roles with higher privilege can unpause.
      */
     function unpause() external override {
-        _onlyStrategistOrOwner();
+        _atLeastRole(ADMIN);
         _unpause();
-        _giveAllowances();
         deposit();
     }
 
     /**
-     * @dev updates the total fee, capped at 5%; only owner.
+     * @dev updates the total fee, capped at 5%; only DEFAULT_ADMIN_ROLE.
      */
-    function updateTotalFee(uint256 _totalFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_totalFee <= MAX_FEE, "Fee Too High");
+    function updateTotalFee(uint256 _totalFee) external {
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
+        require(_totalFee <= MAX_FEE);
         totalFee = _totalFee;
         emit TotalFeeUpdated(totalFee);
     }
@@ -245,15 +264,16 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      strategist fee is expressed as % of the treasury fee and
      *      must be no more than STRATEGIST_MAX_FEE
      *
-     *      only owner
+     *      only DEFAULT_ADMIN_ROLE.
      */
     function updateFees(
         uint256 _callFee,
         uint256 _treasuryFee,
         uint256 _strategistFee
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
-        require(_callFee + _treasuryFee == PERCENT_DIVISOR, "sum != PERCENT_DIVISOR");
-        require(_strategistFee <= STRATEGIST_MAX_FEE, "strategist fee > STRATEGIST_MAX_FEE");
+    ) external returns (bool) {
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
+        require(_callFee + _treasuryFee == PERCENT_DIVISOR);
+        require(_strategistFee <= STRATEGIST_MAX_FEE);
 
         callFee = _callFee;
         treasuryFee = _treasuryFee;
@@ -262,42 +282,29 @@ abstract contract ReaperBaseStrategyv1_1 is
         return true;
     }
 
-    function updateSecurityFee(uint256 _securityFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_securityFee <= MAX_SECURITY_FEE, "fee to high!");
+    function updateSecurityFee(uint256 _securityFee) external {
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
+        require(_securityFee <= MAX_SECURITY_FEE);
         securityFee = _securityFee;
     }
 
     /**
-     * @dev only owner can update treasury address.
+     * @dev only DEFAULT_ADMIN_ROLE can update treasury address.
      */
-    function updateTreasury(address newTreasury) external onlyRole(DEFAULT_ADMIN_ROLE) returns (bool) {
+    function updateTreasury(address newTreasury) external returns (bool) {
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
         treasury = newTreasury;
         return true;
     }
 
     /**
-     * @dev Updates the current strategistRemitter.
-     *      If there is only one strategist this function may be called by
-     *      that strategist. However if there are multiple strategists
-     *      this function may only be called by the STRATEGIST_MULTISIG role.
+     * @dev Updates the current strategistRemitter. Only DEFAULT_ADMIN_ROLE may do this.
      */
     function updateStrategistRemitter(address _newStrategistRemitter) external {
-        if (getRoleMemberCount(STRATEGIST) == 1) {
-            _checkRole(STRATEGIST, msg.sender);
-        } else {
-            _checkRole(STRATEGIST_MULTISIG, msg.sender);
-        }
-
-        require(_newStrategistRemitter != address(0), "!0");
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
+        require(_newStrategistRemitter != address(0));
         strategistRemitter = _newStrategistRemitter;
         emit StrategistRemitterUpdated(_newStrategistRemitter);
-    }
-
-    /**
-     * @dev Only allow access to strategist or owner
-     */
-    function _onlyStrategistOrOwner() internal view {
-        require(hasRole(STRATEGIST, msg.sender) || hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Not authorized");
     }
 
     /**
@@ -332,10 +339,12 @@ abstract contract ReaperBaseStrategyv1_1 is
     }
 
     /**
-     * @dev DEFAULT_ADMIN_ROLE must call this function prior to upgrading the implementation
-     *      and wait UPGRADE_TIMELOCK seconds before executing the upgrade.
+     * @dev This function must be called prior to upgrading the implementation.
+     *      It's required to wait UPGRADE_TIMELOCK seconds before executing the upgrade.
+     *      Strategists and roles with higher privilege can initiate this cooldown.
      */
-    function initiateUpgradeCooldown() external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function initiateUpgradeCooldown() external {
+        _atLeastRole(STRATEGIST);
         upgradeProposalTime = block.timestamp;
     }
 
@@ -343,9 +352,11 @@ abstract contract ReaperBaseStrategyv1_1 is
      * @dev This function is called:
      *      - in initialize()
      *      - as part of a successful upgrade
-     *      - manually by DEFAULT_ADMIN_ROLE to clear the upgrade cooldown.
+     *      - manually to clear the upgrade cooldown.
+     * Guardian and roles with higher privilege can clear this cooldown.
      */
-    function clearUpgradeCooldown() public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function clearUpgradeCooldown() public {
+        _atLeastRole(GUARDIAN);
         upgradeProposalTime = block.timestamp + (ONE_YEAR * 100);
     }
 
@@ -354,9 +365,37 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      Only DEFAULT_ADMIN_ROLE can upgrade the implementation once the timelock
      *      has passed.
      */
-    function _authorizeUpgrade(address) internal override onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(upgradeProposalTime + UPGRADE_TIMELOCK < block.timestamp, "cooldown not initiated or still active");
+    function _authorizeUpgrade(address) internal override {
+        _atLeastRole(DEFAULT_ADMIN_ROLE);
+        require(upgradeProposalTime + UPGRADE_TIMELOCK < block.timestamp);
         clearUpgradeCooldown();
+    }
+
+    /**
+     * @dev Internal function that checks cascading role privileges. Any higher privileged role
+     * should be able to perform all the functions of any lower privileged role. This is
+     * accomplished using the {cascadingAccess} array that lists all roles from most privileged
+     * to least privileged.
+     */
+    function _atLeastRole(bytes32 role) internal view {
+        uint256 numRoles = cascadingAccess.length;
+        uint256 specifiedRoleIndex;
+        for (uint256 i = 0; i < numRoles; i++) {
+            if (role == cascadingAccess[i]) {
+                specifiedRoleIndex = i;
+                break;
+            } else if (i == numRoles - 1) {
+                revert();
+            }
+        }
+
+        for (uint256 i = 0; i <= specifiedRoleIndex; i++) {
+            if (hasRole(cascadingAccess[i], msg.sender)) {
+                break;
+            } else if (i == specifiedRoleIndex) {
+                revert();
+            }
+        }
     }
 
     /**
@@ -386,16 +425,4 @@ abstract contract ReaperBaseStrategyv1_1 is
      *      the vault.
      */
     function _reclaimWant() internal virtual;
-
-    /**
-     * @dev subclasses should add their custom logic to give allowances to external contracts
-     *      so the strategy can successfully interface with them.
-     */
-    function _giveAllowances() internal virtual;
-
-    /**
-     * @dev subclasses should add their custom logic to remove all allowances for any external
-     *      contracts.
-     */
-    function _removeAllowances() internal virtual;
 }

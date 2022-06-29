@@ -4,6 +4,7 @@ coverage
 coverage.json
 typechain
 README.html
+reference
 
 #Hardhat files
 cache
