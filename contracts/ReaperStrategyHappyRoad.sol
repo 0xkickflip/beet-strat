@@ -52,36 +52,6 @@ contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
     bytes32 public rewardUsdcPool;
     address public constant USDC = address(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
 
-    enum HarvestStepType {
-        Swap,
-        ChargeFees
-    }
-
-    enum StepPercentageType {
-        Absolute,
-        TotalFee
-    }
-
-    struct StepTypeWithData {
-        HarvestStepType stepType;
-        bytes data; // abi encoded, decodes to {SwapStep} or {ChargeFeesStep}
-    }
-
-    struct SwapStep {
-        address startToken;
-        address endToken;
-        StepPercentageType percentageType;
-        uint256 percentage; // in basis points precision
-    }
-
-    struct ChargeFeesStep {
-        address feesToken;
-        StepPercentageType percentageType;
-        uint256 percentage; // in basis points precision
-    }
-
-    StepTypeWithData[] public steps;
-
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
      * @notice see documentation for each variable above its respective declaration.
