@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
  */
-contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
+contract ReaperStrategyLove is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -144,6 +144,9 @@ contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
     }
 
     function _swapToJoinErc() internal {
+        if (reward == joinErc) {
+            return;
+        }
         uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
         _swap(reward, joinErc, rewardBal, rewardJoinErcPool);
     }

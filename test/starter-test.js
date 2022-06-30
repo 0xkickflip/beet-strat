@@ -41,8 +41,8 @@ describe('Vaults', function () {
 
   const treasuryAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
   const paymentSplitterAddress = '0x1E71AEE6081f62053123140aacC7a06021D77348';
-  const wantAddress = '0x39965c9dAb5448482Cf7e002F583c812Ceb53046';
-  const gauge = '0x00a2bD63529fD28d777155F5eD1726e9b9b781B4';
+  const wantAddress = '0xd6E5824b54f64CE6f1161210bc17eeBfFC77E031';
+  const gauge = '0x47a063Ae87c3c8c9BFbd81D55eEfa6683543148A';
 
   const wantHolderAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
   const strategistAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
@@ -55,6 +55,7 @@ describe('Vaults', function () {
 
   // const daiAddress = '';
   const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
+  const balAddress = '0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921';
   const joinErcAddress = '0x4200000000000000000000000000000000000006'; // ETH
   const rewardUsdcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
   const rewardJoinErcPool = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
@@ -118,10 +119,10 @@ describe('Vaults', function () {
         [strategistAddr],
         [defaultAdminAddress, adminAddress, guardianAddress],
         wantAddress,
-        usdcAddress,
+        balAddress,
         gauge,
         rewardUsdcPool,
-        rewardUsdcPool
+        rewardJoinErcPool
       ],
       {kind: 'uups'},
     );
