@@ -12,8 +12,6 @@ import "./interfaces/IMasterChef.sol";
 import "./interfaces/ISwapper.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
  */
@@ -128,7 +126,6 @@ contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
 
     function _chargeFees() internal returns (uint256 callFeeToUser) {
         uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
-        console.log(rewardBal);
         _swap(reward, USDC, (rewardBal * totalFee) / PERCENT_DIVISOR, rewardUsdcPool);
 
         IERC20Upgradeable usdc = IERC20Upgradeable(USDC);

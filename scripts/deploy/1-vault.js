@@ -1,9 +1,9 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0x0e8e7307E43301CF28c5d21d5fD3EF0876217D41';
-  const tokenName = 'Two Gods One Pool Beethoven-X Crypt';
-  const tokenSymbol = 'rfBPT-GOD';
+  const wantAddress = '';
+  const tokenName = 'Happy Road Beethoven-X Crypt';
+  const tokenSymbol = 'rfBPT-ROAD';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 

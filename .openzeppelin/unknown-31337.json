@@ -13,7 +13,7 @@
     },
     {
       "address": "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707",
-      "txHash": "0x4ca2237dad17b0278bf8b62724c3c3b84cda6d87963586e19e7958b613e6daaf",
+      "txHash": "0x63b8a3884c0d7b6c020f5c4c59ffef734a278210a4239bce86e0c5f653bd1635",
       "kind": "uups"
     }
   ],
@@ -604,9 +604,9 @@
         }
       }
     },
-    "9740b5002559e131165f788544f7ee9a4fb76da655e3dd0f4c5284038bd9a3f9": {
+    "d1945eb7c4dd3c620d98f54c0294922189d5a04aa529fba7769a8d56ab51d600": {
       "address": "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9",
-      "txHash": "0x005fa71cd73fe31035cf446476b9b7383d6cef88a163a74ba5eb5cad3b9ecbbc",
+      "txHash": "0x19c3dfb6192c841258b39e0742a508f6d72730f29b18c790fff85099d83a834a",
       "layout": {
         "storage": [
           {
@@ -684,7 +684,7 @@
           {
             "contract": "ReaperBaseStrategyv3",
             "label": "harvestLog",
-            "type": "t_array(t_struct(Harvest)7411_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6537_storage)dyn_storage",
             "src": "contracts\\abstract\\ReaperBaseStrategyv3.sol:27"
           },
           {
@@ -763,71 +763,65 @@
             "contract": "ReaperStrategyHappyRoad",
             "label": "want",
             "type": "t_address",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:33"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:31"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "underlyings",
-            "type": "t_array(t_contract(IAsset)8294)dyn_storage",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:34"
+            "type": "t_array(t_contract(IAsset)7420)dyn_storage",
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:32"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "joinErc",
             "type": "t_address",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:35"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:33"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "reward",
             "type": "t_address",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:36"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:34"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "gauge",
             "type": "t_address",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:44"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:42"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "beetsPoolId",
             "type": "t_bytes32",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:45"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:43"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "rewardJoinErcPool",
             "type": "t_bytes32",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:46"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:44"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "joinErcPosition",
             "type": "t_uint256",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:47"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:45"
           },
           {
             "contract": "ReaperStrategyHappyRoad",
             "label": "rewardUsdcPool",
             "type": "t_bytes32",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:52"
-          },
-          {
-            "contract": "ReaperStrategyHappyRoad",
-            "label": "steps",
-            "type": "t_array(t_struct(StepTypeWithData)5179_storage)dyn_storage",
-            "src": "contracts\\ReaperStrategyHappyRoad.sol:83"
+            "src": "contracts\\ReaperStrategyHappyRoad.sol:50"
           }
         ],
         "types": {
           "t_address": {
             "label": "address"
           },
-          "t_array(t_contract(IAsset)8294)dyn_storage": {
+          "t_array(t_contract(IAsset)7420)dyn_storage": {
             "label": "contract IAsset[]"
           },
-          "t_contract(IAsset)8294": {
+          "t_contract(IAsset)7420": {
             "label": "contract IAsset"
           },
           "t_bytes32": {
@@ -836,36 +830,10 @@
           "t_uint256": {
             "label": "uint256"
           },
-          "t_array(t_struct(StepTypeWithData)5179_storage)dyn_storage": {
-            "label": "struct ReaperStrategyHappyRoad.StepTypeWithData[]"
-          },
-          "t_struct(StepTypeWithData)5179_storage": {
-            "label": "struct ReaperStrategyHappyRoad.StepTypeWithData",
-            "members": [
-              {
-                "label": "stepType",
-                "type": "t_enum(HarvestStepType)5170"
-              },
-              {
-                "label": "data",
-                "type": "t_bytes_storage"
-              }
-            ]
-          },
-          "t_enum(HarvestStepType)5170": {
-            "label": "enum ReaperStrategyHappyRoad.HarvestStepType",
-            "members": [
-              "Swap",
-              "ChargeFees"
-            ]
-          },
-          "t_bytes_storage": {
-            "label": "bytes"
-          },
-          "t_array(t_struct(Harvest)7411_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6537_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest[]"
           },
-          "t_struct(Harvest)7411_storage": {
+          "t_struct(Harvest)6537_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest",
             "members": [
               {
