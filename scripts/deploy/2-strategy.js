@@ -1,14 +1,14 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = '0xbdf94B9D813AE4B54D9B221C6fd003AF2e1B8432';
-  const want = '0x39965c9dAb5448482Cf7e002F583c812Ceb53046';
+  const vaultAddress = '0xCA55757854222d8232a19EC8Aae336594eE3b5E5';
+  const want = '0x5028497af0c9a54ea8C6D42a054c0341B9fc6168';
   const joinErc = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
-  const gauge = '0x00a2bD63529fD28d777155F5eD1726e9b9b781B4';
+  const gauge = '0x2D6743160AB3038aF12C6a6B605C683bc9e4f0B6';
   const rewardUsdcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
   const rewardJoinErcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
 
-  const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoad');
+  const Strategy = await ethers.getContractFactory('ReaperStrategyLennonLong');
 
   const treasuryAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
   const paymentSplitterAddress = '0x2b394b228908fb7DAcafF5F340f1b442a39B056C';
