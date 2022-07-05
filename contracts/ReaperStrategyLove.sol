@@ -26,12 +26,12 @@ contract ReaperStrategyLove is ReaperBaseStrategyv3 {
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      * {joinErc} - underlying asset used to create want BPT
-     * {reward} - token received as reward
+     * {rewards} - tokens received as rewards
      */
     address public want;
     IAsset[] underlyings;
     address public joinErc;
-    address public reward;
+    address[] public rewards;
 
     /**
      * @dev Strategy variables
@@ -73,7 +73,8 @@ contract ReaperStrategyLove is ReaperBaseStrategyv3 {
         rewardJoinErcPool = _rewardJoinErcPool;
         beetsPoolId = IBasePool(want).getPoolId();
 
-        reward = IRewardsOnlyGauge(gauge).reward_tokens(0);
+        rewards[0] = IRewardsOnlyGauge(gauge).reward_tokens(0);
+        rewards[1] = IRewardsOnlyGauge(gauge).reward_tokens(1);
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == joinErc) {
@@ -125,8 +126,11 @@ contract ReaperStrategyLove is ReaperBaseStrategyv3 {
     }
 
     function _chargeFees() internal returns (uint256 callFeeToUser) {
-        uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
-        _swap(reward, USDC, (rewardBal * totalFee) / PERCENT_DIVISOR, rewardUsdcPool);
+        uint256 rewardBal;
+        for (uint256 i; i < rewards.length; i++) {
+            rewardBal = IERC20Upgradeable(rewards[i]).balanceOf(address(this));
+            _swap(rewards[i], USDC, (rewardBal * totalFee) / PERCENT_DIVISOR, rewardUsdcPool);
+        }
 
         IERC20Upgradeable usdc = IERC20Upgradeable(USDC);
         uint256 usdcFee = usdc.balanceOf(address(this));
@@ -144,11 +148,14 @@ contract ReaperStrategyLove is ReaperBaseStrategyv3 {
     }
 
     function _swapToJoinErc() internal {
-        if (reward == joinErc) {
-            return;
+        uint256 rewardBal;
+        for (uint256 i; i < rewards.length; i++) {
+            if (rewards[i] == joinErc) {
+                continue;
+            }
+            rewardBal = IERC20Upgradeable(rewards[i]).balanceOf(address(this));
+            _swap(rewards[i], joinErc, rewardBal, rewardJoinErcPool);
         }
-        uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
-        _swap(reward, joinErc, rewardBal, rewardJoinErcPool);
     }
 
      /**
