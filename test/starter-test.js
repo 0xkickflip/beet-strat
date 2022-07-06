@@ -100,14 +100,14 @@ describe('Vaults', function () {
 
     // get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoad');
+    Strategy = await ethers.getContractFactory('ReaperStrategyLove');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
     vault = await Vault.deploy(
       wantAddress,
-      'Happy Road Beethoven-X Crypt',
-      'rfBPT-ROAD',
+      'Need Love Beethoven-X Crypt',
+      'rfBPT-LOVE',
       0,
       ethers.constants.MaxUint256,
     );

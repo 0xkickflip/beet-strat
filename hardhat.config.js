@@ -10,6 +10,7 @@ require('@openzeppelin/hardhat-upgrades');
 
 const PRIVATE_KEY = process.env.DEPLOYER_PRIVATE_KEY;
 const FTMSCAN_KEY = process.env.FTMSCAN_API_KEY;
+const OPSCAN_KEY = process.env.OPSCAN_API_KEY;
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -19,6 +20,15 @@ module.exports = {
     compilers: [
       {
         version: "0.8.11",
+        settings: {
+          optimizer: {
+            enabled: true,
+            runs: 200,
+          },
+        },
+      },
+      {
+        version: "0.8.2",
         settings: {
           optimizer: {
             enabled: true,
@@ -39,14 +49,17 @@ module.exports = {
       chainId: 4002,
       accounts: [`0x${PRIVATE_KEY}`],
     },
-    optimism: {
+    optimisticEthereum: {
       url: `https://mainnet.optimism.io`,
       chainId: 10,
       accounts: [`0x${PRIVATE_KEY}`]
     }
   },
   etherscan: {
-    apiKey: FTMSCAN_KEY,
+    apiKey: {
+      mainnet: FTMSCAN_KEY,
+      optimisticEthereum: OPSCAN_KEY, 
+    }
   },
   mocha: {
     timeout: 1200000,

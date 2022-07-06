@@ -72,9 +72,8 @@ contract ReaperStrategyLove is ReaperBaseStrategyv3 {
         rewardUsdcPool = _rewardUsdcPool;
         rewardJoinErcPool = _rewardJoinErcPool;
         beetsPoolId = IBasePool(want).getPoolId();
-
-        rewards[0] = IRewardsOnlyGauge(gauge).reward_tokens(0);
-        rewards[1] = IRewardsOnlyGauge(gauge).reward_tokens(1);
+        rewards.push(IRewardsOnlyGauge(gauge).reward_tokens(0));
+        rewards.push(IRewardsOnlyGauge(gauge).reward_tokens(1));
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == joinErc) {
