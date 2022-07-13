@@ -2,20 +2,20 @@
 
 pragma solidity ^0.8.0;
 
-import "./abstract/ReaperBaseStrategyv3.sol";
-import "./interfaces/IAsset.sol";
-import "./interfaces/IBasePool.sol";
-import "./interfaces/IBaseWeightedPool.sol";
-import "./interfaces/IBeetVault.sol";
-import "./interfaces/IRewardsOnlyGauge.sol";
-import "./interfaces/IMasterChef.sol";
-import "./interfaces/ISwapper.sol";
+import "../abstract/ReaperBaseStrategyv3.sol";
+import "../interfaces/IAsset.sol";
+import "../interfaces/IBasePool.sol";
+import "../interfaces/IBaseWeightedPool.sol";
+import "../interfaces/IBeetVault.sol";
+import "../interfaces/IRewardsOnlyGauge.sol";
+import "../interfaces/IMasterChef.sol";
+import "../interfaces/ISwapper.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
  */
-contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
+contract ReaperStrategyLennonLong3 is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -52,6 +52,8 @@ contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
 
     bytes32 public constant beetsUsdcPool = 0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005;
     address public constant BEETS = address(0x97513e975a7fA9072c72C92d8000B0dB90b163c5);
+
+    uint256 public constant THOUSAND = 1_0_0_0;
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
      * @notice see documentation for each variable above its respective declaration.

@@ -1,11 +1,8 @@
 async function main() {
-  const stratFactory = await ethers.getContractFactory('ReaperStrategyTwoGodsOnePool');
-  // const stratContract = await hre.upgrades.upgradeProxy('0x0310b9979BcC17fa2DB4cEC4417FCebabc405F1D', stratFactory);
-  // console.log('Strategy upgraded!');
-  const stratContract = await stratFactory.attach('0x0310b9979BcC17fa2DB4cEC4417FCebabc405F1D');
-
-  const daiAddress = '0x8D11eC38a3EB5E956B052f67Da8Bdc9bef8Abf3E';
-  const deusAddress = '0xDE5ed76E7c05eC5e4572CfC88d1ACEA165109E44';
+  const stratFactory = await ethers.getContractFactory('ReaperStrategyLennonLong');
+  const stratContract = await hre.upgrades.upgradeProxy('0xc2f81876ed0075A6ebD99e0faCeCf5E90C210A0F', stratFactory);
+  console.log('Strategy upgraded!');
+  // const stratContract = await stratFactory.attach('0xc2f81876ed0075A6ebD99e0faCeCf5E90C210A0F');
 
   // await stratContract.pause();
   // await stratContract.addSwapStep(deusAddress, daiAddress, 1 /* total fee */, 0);

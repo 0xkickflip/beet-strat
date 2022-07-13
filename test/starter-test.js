@@ -99,7 +99,7 @@ describe('Vaults', function () {
 
     // get artifacts
     Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoad');
+    Strategy = await ethers.getContractFactory('ReaperStrategyLennonLong');
     Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
@@ -169,22 +169,22 @@ describe('Vaults', function () {
       );
     });
 
-    xit('should allow implementation upgrades once timelock has passed', async function () {
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV2');
+    it('should allow implementation upgrades once timelock has passed', async function () {
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyLennonLong2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
       await hre.upgrades.upgradeProxy(strategy.address, StrategyV2);
     });
 
-    xit('successive upgrades need to initiate timelock again', async function () {
-      const StrategyV2 = await ethers.getContractFactory('TestReaperStrategyTombMaiV2');
+    it('successive upgrades need to initiate timelock again', async function () {
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyLennonLong2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
       await hre.upgrades.upgradeProxy(strategy.address, StrategyV2);
 
-      const StrategyV3 = await ethers.getContractFactory('TestReaperStrategyTombMaiV3');
+      const StrategyV3 = await ethers.getContractFactory('ReaperStrategyLennonLong3');
       await expect(hre.upgrades.upgradeProxy(strategy.address, StrategyV3)).to.be.revertedWith(
         'cooldown not initiated or still active',
       );
@@ -199,7 +199,7 @@ describe('Vaults', function () {
     });
   });
 
-  describe('Vault Tests', function () {
+  xdescribe('Vault Tests', function () {
     xit('should allow deposits and account for them correctly', async function () {
       const userBalance = await want.balanceOf(wantHolderAddr);
       const vaultBalance = await vault.balance();
