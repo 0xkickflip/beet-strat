@@ -2,20 +2,20 @@
 
 pragma solidity ^0.8.0;
 
-import "./abstract/ReaperBaseStrategyv3.sol";
-import "./interfaces/IAsset.sol";
-import "./interfaces/IBasePool.sol";
-import "./interfaces/IBaseWeightedPool.sol";
-import "./interfaces/IBeetVault.sol";
-import "./interfaces/IRewardsOnlyGauge.sol";
-import "./interfaces/IMasterChef.sol";
-import "./interfaces/ISwapper.sol";
+import "../abstract/ReaperBaseStrategyv3.sol";
+import "../interfaces/IAsset.sol";
+import "../interfaces/IBasePool.sol";
+import "../interfaces/IBaseWeightedPool.sol";
+import "../interfaces/IBeetVault.sol";
+import "../interfaces/IRewardsOnlyGauge.sol";
+import "../interfaces/IMasterChef.sol";
+import "../interfaces/ISwapper.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
  */
-contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
+contract ReaperStrategyHappyRoad2 is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
