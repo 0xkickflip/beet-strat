@@ -50,7 +50,7 @@ contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
     bytes32 public rewardUsdcPool;
     address public constant USDC = address(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
 
-    bytes32 public constant beetsUsdcPool = 0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005;
+     bytes32 public constant beetsRewardPool = 0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005;
     address public constant BEETS = address(0x97513e975a7fA9072c72C92d8000B0dB90b163c5);
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -120,7 +120,7 @@ contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
         IRewardsOnlyGauge(gauge).claim_rewards(address(this));
-        _swapBeetsToUsdc();
+        _swapBeetsToReward();
         callerFee = _chargeFees();
         _swapToJoinErc();
         _joinPool();
@@ -151,9 +151,9 @@ contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
         _swap(reward, joinErc, rewardBal, rewardJoinErcPool);
     }
 
-    function _swapBeetsToUsdc() internal {
+    function _swapBeetsToReward() internal {
         uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        _swap(BEETS, USDC, beetsBal, beetsUsdcPool);
+        _swap(BEETS, reward, beetsBal, beetsRewardPool);
     }
 
      /**
