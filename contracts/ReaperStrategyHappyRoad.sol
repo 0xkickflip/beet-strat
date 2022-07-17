@@ -153,7 +153,7 @@ contract ReaperStrategyHappyRoad is ReaperBaseStrategyv3 {
 
     function _swapBeetsToReward() internal {
         uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        _swap(BEETS, USDC, beetsBal, beetsRewardPool);
+        _swap(BEETS, reward, beetsBal, beetsRewardPool);
     }
 
      /**
