@@ -74,7 +74,7 @@ contract ReaperStrategyLennonLong is ReaperBaseStrategyv3 {
         WETHUsdcPool = _WETHUsdcPool;
         beetsPoolId = IBasePool(want).getPoolId();
 
-        reward = IRewardsOnlyGauge(gauge).reward_tokens(0);
+        reward = IRewardsOnlyGauge(gauge).reward_tokens(1);
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == joinErc) {

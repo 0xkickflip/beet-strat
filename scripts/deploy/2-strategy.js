@@ -1,7 +1,7 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = '0xD3455C05CB1c0F15596dCe5b43680D4908f64a9C';
+  const vaultAddress = '0x8B80A8701A339620d45e47762B1568b9c3Ac3A17';
   const want = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
   const joinErc = '0x00a35FD824c717879BF370E70AC6868b95870Dfb';//IB
   const gauge = '0x3672884a609bFBb008ad9252A544F52dF6451A03';
