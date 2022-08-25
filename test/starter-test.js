@@ -56,9 +56,9 @@ describe('Vaults', function () {
   // const daiAddress = '';
   const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
   const joinErcAddress = '0x4200000000000000000000000000000000000006'; // ETH
-  const rewardUsdcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
-  const rewardJoinErcPool = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
-  // const deusAddress = '';
+  const WETHUsdcPool = '0xefb0d9f51efd52d7589a9083a6d0ca4de416c24900020000000000000000002c';
+
+
 
   let owner;
   let wantHolder;
@@ -120,8 +120,8 @@ describe('Vaults', function () {
         wantAddress,
         usdcAddress,
         gauge,
-        rewardUsdcPool,
-        rewardUsdcPool
+        WETHUsdcPool,
+        WETHUsdcPool
       ],
       {kind: 'uups'},
     );

@@ -1,12 +1,12 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = '0xCA55757854222d8232a19EC8Aae336594eE3b5E5';
-  const want = '0x5028497af0c9a54ea8C6D42a054c0341B9fc6168';
-  const joinErc = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
-  const gauge = '0x2D6743160AB3038aF12C6a6B605C683bc9e4f0B6';
-  const rewardUsdcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
-  const rewardJoinErcPool = '0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005';
+  const vaultAddress = '0xD3455C05CB1c0F15596dCe5b43680D4908f64a9C';
+  const want = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
+  const joinErc = '0x00a35FD824c717879BF370E70AC6868b95870Dfb';//IB
+  const gauge = '0x3672884a609bFBb008ad9252A544F52dF6451A03';
+
+  const WETHUsdcPool = '0xefb0d9f51efd52d7589a9083a6d0ca4de416c24900020000000000000000002c';
 
   const Strategy = await ethers.getContractFactory('ReaperStrategyLennonLong');
 
@@ -16,6 +16,7 @@ async function main() {
   const strategist1 = '0x1E71AEE6081f62053123140aacC7a06021D77348';
   const strategist2 = '0x81876677843D00a7D792E1617459aC2E93202576';
   const strategist3 = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
+  const strategist4 = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 
   const superAdmin = '0x9BC776dBb134Ef9D7014dB1823Cd755Ac5015203';
   const admin = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
@@ -26,13 +27,12 @@ async function main() {
     [
       vaultAddress,
       [treasuryAddress, paymentSplitterAddress],
-      [strategist1, strategist2, strategist3],
+      [strategist1, strategist2, strategist3, strategist4],
       [superAdmin, admin, guardian],
       want,
       joinErc,
       gauge,
-      rewardUsdcPool,
-      rewardJoinErcPool
+      WETHUsdcPool
     ],
     {kind: 'uups', timeout: 0},
   );
