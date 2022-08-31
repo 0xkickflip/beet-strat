@@ -18,25 +18,27 @@ const toWantUnit = (num, isUSDC = false) => {
   return ethers.utils.parseEther(num);
 };
 
-const treasuryAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
+const treasuryAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 const paymentSplitterAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
 
-const superAdminAddress = '0x1E71AEE6081f62053123140aacC7a06021D77348';
-const adminAddress = '0x1E71AEE6081f62053123140aacC7a06021D77348';
-const guardianAddress = '0x1E71AEE6081f62053123140aacC7a06021D77348';
+const superAdminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
+const adminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
+const guardianAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 const wantAddress = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 const joinErcAddress = '0x00a35FD824c717879BF370E70AC6868b95870Dfb'; // IB
 const WETHUsdcPool = '0x5028497af0c9a54ea8c6d42a054c0341b9fc6168000100000000000000000004';
 
 
-const wantHolderAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
+const wantHolderAddr = '0xD131F1BcDd547e067Af447dD3C36C99d6be9FdEB';
+const unassignedRoleAddr = '0x00dEe1F836998bcc736022f314dF906588d44808';
+const ownerAddr = '0xD46acbA18e4f3C8b8b6c501DF1a6B05609a642Bd';
 const strategistAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
-const gauge = '0x00a2bD63529fD28d777155F5eD1726e9b9b781B4';
+const gauge = '0x3672884a609bFBb008ad9252A544F52dF6451A03';
 
 
 
@@ -56,7 +58,8 @@ describe('Vaults', function () {
     });
 
     // get signers
-    const [unassignedRole, owner] = await ethers.getSigners();
+    const unassignedRole = await ethers.getImpersonatedSigner(unassignedRoleAddr);
+    const owner = await ethers.getImpersonatedSigner(ownerAddr);
     const wantHolder = await ethers.getImpersonatedSigner(wantHolderAddr);
     const strategist = await ethers.getImpersonatedSigner(strategistAddr);
     const guardian = await ethers.getImpersonatedSigner(guardianAddress);
@@ -93,6 +96,7 @@ describe('Vaults', function () {
 
     // approving LP token and vault share spend
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
+    await want.connect(owner).approve(vault.address, ethers.constants.MaxUint256);
 
     return {vault, strategy, want, usdc, owner, wantHolder, strategist, guardian, admin, superAdmin, unassignedRole};
   }
@@ -329,9 +333,9 @@ describe('Vaults', function () {
       const predictedCallerFee = await readOnlyStrat.callStatic.harvest();
       console.log(`predicted caller fee ${ethers.utils.formatEther(predictedCallerFee)}`);
 
-      const usdcBalBefore = await wftm.balanceOf(owner.address);
+      const usdcBalBefore = await usdc.balanceOf(owner.address);
       await strategy.harvest();
-      const usdcBalAfter = await wftm.balanceOf(owner.address);
+      const usdcBalAfter = await usdc.balanceOf(owner.address);
       const usdcBalDifference = usdcBalAfter.sub(usdcBalBefore);
       console.log(`actual caller fee ${ethers.utils.formatEther(usdcBalDifference)}`);
     });
