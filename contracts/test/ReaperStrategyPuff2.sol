@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 /**
  * @dev LP compounding strategy for Two Gods One Pool Beethoven-X pool.
  */
-contract ReaperStrategyLennonLong2 is ReaperBaseStrategyv3 {
+contract ReaperStrategyPuff2 is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -41,17 +41,18 @@ contract ReaperStrategyLennonLong2 is ReaperBaseStrategyv3 {
      */
     address public gauge; //rewardGauge
     bytes32 public beetsPoolId;
-    bytes32 public rewardJoinErcPool;
+    //bytes32 public rewardJoinErcPool;
     uint256 public joinErcPosition;
 
     /// Fee variables
     /// {rewardUsdcPool} - bytes32 of the pool used to swap rewards to USDC
     /// {USDC} - fees are charged in USDC
-    bytes32 public rewardUsdcPool;
+    bytes32 public WETHUsdcPool;
     address public constant USDC = address(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
+    address public constant WETH = address(0x4200000000000000000000000000000000000006);
 
-    bytes32 public constant beetsUsdcPool = 0x7ef99013e446ddce2486b8e04735b7019a115e6f000100000000000000000005;
-    address public constant BEETS = address(0x97513e975a7fA9072c72C92d8000B0dB90b163c5);
+    //bytes32 public constant beetsRewardPool = 0xefb0d9f51efd52d7589a9083a6d0ca4de416c24900020000000000000000002c;
+    //address public constant BEETS = address(0x97513e975a7fA9072c72C92d8000B0dB90b163c5);
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
      * @notice see documentation for each variable above its respective declaration.
@@ -64,18 +65,16 @@ contract ReaperStrategyLennonLong2 is ReaperBaseStrategyv3 {
         address _want,
         address _joinErc,
         address _gauge,
-        bytes32 _rewardUsdcPool,
-        bytes32 _rewardJoinErcPool
+        bytes32 _WETHUsdcPool
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists, _multisigRoles);
         want = _want;
         joinErc = _joinErc;
         gauge = _gauge;
-        rewardUsdcPool = _rewardUsdcPool;
-        rewardJoinErcPool = _rewardJoinErcPool;
+        WETHUsdcPool = _WETHUsdcPool;
         beetsPoolId = IBasePool(want).getPoolId();
 
-        reward = IRewardsOnlyGauge(gauge).reward_tokens(0);
+        reward = IRewardsOnlyGauge(gauge).reward_tokens(1);
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == joinErc) {
@@ -120,16 +119,19 @@ contract ReaperStrategyLennonLong2 is ReaperBaseStrategyv3 {
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
         IRewardsOnlyGauge(gauge).claim_rewards(address(this));
-        _swapBeetsToUsdc();
         callerFee = _chargeFees();
-        _swapToJoinErc();
         _joinPool();
         deposit();
     }
 
     function _chargeFees() internal returns (uint256 callFeeToUser) {
         uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
-        _swap(reward, USDC, (rewardBal * totalFee) / PERCENT_DIVISOR, rewardUsdcPool);
+
+        _swap(reward, WETH, (rewardBal * totalFee) / PERCENT_DIVISOR, beetsPoolId);
+
+        uint256 wethBal = IERC20Upgradeable(WETH).balanceOf(address(this));
+        
+        _swap(WETH, USDC, wethBal, WETHUsdcPool);
 
         IERC20Upgradeable usdc = IERC20Upgradeable(USDC);
         uint256 usdcFee = usdc.balanceOf(address(this));
@@ -146,15 +148,6 @@ contract ReaperStrategyLennonLong2 is ReaperBaseStrategyv3 {
         }
     }
 
-    function _swapToJoinErc() internal {
-        uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
-        _swap(reward, joinErc, rewardBal, rewardJoinErcPool);
-    }
-
-    function _swapBeetsToUsdc() internal {
-        uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
-        _swap(BEETS, USDC, beetsBal, beetsUsdcPool);
-    }
 
      /**
      * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
