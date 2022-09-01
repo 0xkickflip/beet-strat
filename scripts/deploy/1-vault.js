@@ -1,7 +1,7 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
+  const wantAddress = '0x4Fd63966879300caFafBB35D157dC5229278Ed23';
   const tokenName = 'Puff the Magic Dragon Beethoven-X Crypt';
   const tokenSymbol = 'rfBPT-IBETH';
   const depositFee = 0;

@@ -38,7 +38,12 @@ const strategistAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
-const gauge = '0x3672884a609bFBb008ad9252A544F52dF6451A03';
+
+const gauge = '0x38f79beFfC211c6c439b0A3d10A0A673EE63AFb4';
+const intermediate = '0x4200000000000000000000000000000000000042'; //OP
+
+const rewardWETHPool1 = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
+const rewardWETHPool2 = '0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003';
 
 
 
@@ -84,7 +89,10 @@ describe('Vaults', function () {
         wantAddress,
         joinErcAddress,
         gauge,
-        WETHUsdcPool
+        intermediate,
+        WETHUsdcPool,
+        rewardWETHPool1,
+        rewardWETHPool2
       ],
       {kind: 'uups'},
     );
