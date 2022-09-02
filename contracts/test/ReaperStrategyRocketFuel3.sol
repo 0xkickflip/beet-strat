@@ -40,17 +40,14 @@ contract ReaperStrategyRocketFuel3 is ReaperBaseStrategyv3 {
      * {joinErcPosition} - index of asset used to join pool
      */
     address public gauge; //rewardGauge
-    bytes32 public beetsPoolId;
-    bytes32 public rewardWETHPoolId;
-    //bytes32 public rewardJoinErcPool;
+    bytes32 public beetsPoolId;//rETH-WETH
+    bytes32 public rewardOPPoolId;//all you need is love
     uint256 public joinErcPosition;
 
     /// Fee variables
     /// {rewardUsdcPool} - bytes32 of the pool used to swap rewards to USDC
     /// {USDC} - fees are charged in USDC
-    bytes32 public WETHUsdcPool;
-    bytes32 public rewardWETHPool1;
-    bytes32 public rewardWETHPool2;
+    bytes32 public WETHUsdcOPPoolId; //happy road
     address public constant USDC = address(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     address public constant WETH = address(0x4200000000000000000000000000000000000006);
     address public intermediateToken;
@@ -70,18 +67,16 @@ contract ReaperStrategyRocketFuel3 is ReaperBaseStrategyv3 {
         address _joinErc,
         address _gauge,
         address _intermediateToken,
-        bytes32 _WETHUsdcPool,
-        bytes32 _rewardWETHPool1,
-        bytes32 _rewardWETHPool2
+        bytes32 _WETHUsdcOPPoolId,
+        bytes32 _rewardOPPoolId
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _feeRemitters, _strategists, _multisigRoles);
         want = _want;
         joinErc = _joinErc;
         gauge = _gauge;
         intermediateToken = _intermediateToken;
-        WETHUsdcPool = _WETHUsdcPool;
-        rewardWETHPool1 = _rewardWETHPool1;
-        rewardWETHPool2 = _rewardWETHPool2;
+        WETHUsdcOPPoolId = _WETHUsdcOPPoolId;
+        rewardOPPoolId = _rewardOPPoolId;
 
         beetsPoolId = IBasePool(want).getPoolId();
 
@@ -130,25 +125,29 @@ contract ReaperStrategyRocketFuel3 is ReaperBaseStrategyv3 {
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
         IRewardsOnlyGauge(gauge).claim_rewards(address(this));
-        _swapRewardtoWETH();//BAL to OP to WETH
-        callerFee = _chargeFees();//WETH to USDC the %
+        _swapRewardToIntermediate();//BAL to OP
+        callerFee = _chargeFees();//OP to USDC the %
+        _swapIntermediateToJoin();//remaining OP to WETH
         _joinPool(); //WETH joinPool
         deposit();
     }
-    function _swapRewardtoWETH() internal {
+
+    function _swapRewardToIntermediate() internal {
         uint256 rewardBal = IERC20Upgradeable(reward).balanceOf(address(this));
 
-        _swap(reward, intermediateToken, rewardBal, rewardWETHPool1);
+        _swap(reward, intermediateToken, rewardBal, rewardOPPoolId);
+    }
 
+    function _swapIntermediateToJoin() internal {
         uint256 intermediateBal = IERC20Upgradeable(intermediateToken).balanceOf(address(this));
-
-        _swap(intermediateToken, WETH, intermediateBal, rewardWETHPool2);
+        
+        _swap(intermediateToken, joinErc, (intermediateBal * totalFee) / PERCENT_DIVISOR, WETHUsdcOPPoolId);
     }
 
     function _chargeFees() internal returns (uint256 callFeeToUser) {
-        uint256 wethBal = IERC20Upgradeable(WETH).balanceOf(address(this));
+        uint256 intermediateBal = IERC20Upgradeable(intermediateToken).balanceOf(address(this));
         
-        _swap(WETH, USDC, (wethBal * totalFee) / PERCENT_DIVISOR, WETHUsdcPool);
+        _swap(intermediateToken, USDC, (intermediateBal * totalFee) / PERCENT_DIVISOR, WETHUsdcOPPoolId);
 
         IERC20Upgradeable usdc = IERC20Upgradeable(USDC);
         uint256 usdcFee = usdc.balanceOf(address(this));

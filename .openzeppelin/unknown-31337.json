@@ -18,7 +18,7 @@
     },
     {
       "address": "0xa513E6E4b8f2a923D98304ec87F64353C4D5C853",
-      "txHash": "0xd00f149eefc7af4dd233dfb389ff495113effb5c7c71161649a3616cef7d1647",
+      "txHash": "0x061a817aa0f7b06b486741fd944f04a04fcec02ad74c9c4e2e91132783ff9715",
       "kind": "uups"
     }
   ],
@@ -1219,7 +1219,7 @@
     },
     "0f9c19a3e8d02f4236f917561af73e45e45215008a48fd16a76c8f889fca4406": {
       "address": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
-      "txHash": "0x5341c8c891f7a05c07a41fc36c1c17deded802a0d33ff8b631bae9a300ebfffb",
+      "txHash": "0x70c01d9bae550e4451dd79d6ab9c8605c958a3f8546eb031f832fcdb438fb42e",
       "layout": {
         "storage": [
           {
@@ -1323,7 +1323,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)7662_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6894_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv3",
             "src": "contracts\\abstract\\ReaperBaseStrategyv3.sol:27"
           },
@@ -1428,80 +1428,80 @@
             "offset": 0,
             "slot": "364",
             "type": "t_address",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:31"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:31"
           },
           {
             "label": "underlyings",
             "offset": 0,
             "slot": "365",
-            "type": "t_array(t_contract(IAsset)8545)dyn_storage",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:32"
+            "type": "t_array(t_contract(IAsset)7777)dyn_storage",
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:32"
           },
           {
             "label": "joinErc",
             "offset": 0,
             "slot": "366",
             "type": "t_address",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:33"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:33"
           },
           {
             "label": "reward",
             "offset": 0,
             "slot": "367",
             "type": "t_address",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:34"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:34"
           },
           {
             "label": "gauge",
             "offset": 0,
             "slot": "368",
             "type": "t_address",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:42"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:42"
           },
           {
             "label": "beetsPoolId",
             "offset": 0,
             "slot": "369",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:43"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:43"
           },
           {
             "label": "rewardOPPoolId",
             "offset": 0,
             "slot": "370",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:44"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:44"
           },
           {
             "label": "joinErcPosition",
             "offset": 0,
             "slot": "371",
             "type": "t_uint256",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:45"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:45"
           },
           {
             "label": "WETHUsdcOPPoolId",
             "offset": 0,
             "slot": "372",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:50"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:50"
           },
           {
             "label": "intermediateToken",
             "offset": 0,
             "slot": "373",
             "type": "t_address",
-            "contract": "ReaperStrategyRocketFuelB2",
-            "src": "contracts\\test\\ReaperStrategyRocketFuelB2.sol:53"
+            "contract": "ReaperStrategyRocketFuel2",
+            "src": "contracts\\test\\ReaperStrategyRocketFuel2.sol:53"
           }
         ],
         "types": {
@@ -1513,11 +1513,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_contract(IAsset)8545)dyn_storage": {
+          "t_array(t_contract(IAsset)7777)dyn_storage": {
             "label": "contract IAsset[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)7662_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6894_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -1537,7 +1537,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IAsset)8545": {
+          "t_contract(IAsset)7777": {
             "label": "contract IAsset",
             "numberOfBytes": "20"
           },
@@ -1569,7 +1569,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)7662_storage": {
+          "t_struct(Harvest)6894_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest",
             "members": [
               {
@@ -1634,9 +1634,9 @@
         }
       }
     },
-    "e17db1ffbcf443439071342de7c0cd5ecd80c48a69f73e869c029e2aefb08bc2": {
+    "f1e1b714def3ad195a6b8a5e175fd6dcef08b19388eb1992c7d21b8cba23556d": {
       "address": "0x0165878A594ca255338adfa4d48449f69242Eb8F",
-      "txHash": "0xa85172715970eb44626aea02a63ce710885da8685b47fef7236842ca57cb6d91",
+      "txHash": "0x0397819acfa103efa618d4aa96ce1bd311b343956619d46fa49cb502a43f46ba",
       "layout": {
         "storage": [
           {
@@ -1740,7 +1740,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)7662_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6894_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv3",
             "src": "contracts\\abstract\\ReaperBaseStrategyv3.sol:27"
           },
@@ -1852,7 +1852,7 @@
             "label": "underlyings",
             "offset": 0,
             "slot": "365",
-            "type": "t_array(t_contract(IAsset)8545)dyn_storage",
+            "type": "t_array(t_contract(IAsset)7777)dyn_storage",
             "contract": "ReaperStrategyRocketFuel",
             "src": "contracts\\ReaperStrategyRocketFuel.sol:32"
           },
@@ -1889,7 +1889,7 @@
             "src": "contracts\\ReaperStrategyRocketFuel.sol:43"
           },
           {
-            "label": "rewardWETHPoolId",
+            "label": "rewardOPPoolId",
             "offset": 0,
             "slot": "370",
             "type": "t_bytes32",
@@ -1902,39 +1902,23 @@
             "slot": "371",
             "type": "t_uint256",
             "contract": "ReaperStrategyRocketFuel",
-            "src": "contracts\\ReaperStrategyRocketFuel.sol:46"
+            "src": "contracts\\ReaperStrategyRocketFuel.sol:45"
           },
           {
-            "label": "WETHUsdcPool",
+            "label": "WETHUsdcOPPoolId",
             "offset": 0,
             "slot": "372",
             "type": "t_bytes32",
             "contract": "ReaperStrategyRocketFuel",
-            "src": "contracts\\ReaperStrategyRocketFuel.sol:51"
-          },
-          {
-            "label": "rewardWETHPool1",
-            "offset": 0,
-            "slot": "373",
-            "type": "t_bytes32",
-            "contract": "ReaperStrategyRocketFuel",
-            "src": "contracts\\ReaperStrategyRocketFuel.sol:52"
-          },
-          {
-            "label": "rewardWETHPool2",
-            "offset": 0,
-            "slot": "374",
-            "type": "t_bytes32",
-            "contract": "ReaperStrategyRocketFuel",
-            "src": "contracts\\ReaperStrategyRocketFuel.sol:53"
+            "src": "contracts\\ReaperStrategyRocketFuel.sol:50"
           },
           {
             "label": "intermediateToken",
             "offset": 0,
-            "slot": "375",
+            "slot": "373",
             "type": "t_address",
             "contract": "ReaperStrategyRocketFuel",
-            "src": "contracts\\ReaperStrategyRocketFuel.sol:56"
+            "src": "contracts\\ReaperStrategyRocketFuel.sol:53"
           }
         ],
         "types": {
@@ -1946,11 +1930,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_contract(IAsset)8545)dyn_storage": {
+          "t_array(t_contract(IAsset)7777)dyn_storage": {
             "label": "contract IAsset[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)7662_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6894_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -1970,7 +1954,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IAsset)8545": {
+          "t_contract(IAsset)7777": {
             "label": "contract IAsset",
             "numberOfBytes": "20"
           },
@@ -2002,7 +1986,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)7662_storage": {
+          "t_struct(Harvest)6894_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest",
             "members": [
               {

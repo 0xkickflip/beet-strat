@@ -72,7 +72,7 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyRocketFuelB');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyRocketFuel');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
@@ -121,7 +121,7 @@ describe('Vaults', function () {
     // Upgrade tests are ok to skip IFF no changes to BaseStrategy are made
     it('should not allow implementation upgrades without initiating cooldown', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuelB2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
@@ -129,13 +129,13 @@ describe('Vaults', function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await strategy.initiateUpgradeCooldown();
 
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuelB3');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel3');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
     it('should allow implementation upgrades once timelock has passed', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuelB2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
@@ -144,13 +144,13 @@ describe('Vaults', function () {
 
     it('successive upgrades need to initiate timelock again', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuelB2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
       await upgrades.upgradeProxy(strategy.address, StrategyV2);
 
-      const StrategyV3 = await ethers.getContractFactory('ReaperStrategyRocketFuelB3');
+      const StrategyV3 = await ethers.getContractFactory('ReaperStrategyRocketFuel3');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV3)).to.be.reverted;
 
       await strategy.initiateUpgradeCooldown();

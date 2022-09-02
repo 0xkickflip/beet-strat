@@ -1,15 +1,15 @@
 const hre = require('hardhat');
 
 async function main() {
-  const vaultAddress = '0xCE1a9cF9266b03404c43C8B0Da1ae833A6F922c7';
-  const want = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
+  const vaultAddress = '0xc99c96e761afEb6454f3Bf3163668d599110305a';
+  const want = '0x4Fd63966879300caFafBB35D157dC5229278Ed23';
   const joinErc = '0x4200000000000000000000000000000000000006';//WETH
   const gauge = '0x38f79beFfC211c6c439b0A3d10A0A673EE63AFb4';
   const intermediate = '0x4200000000000000000000000000000000000042'; //OP
 
   const WETHUsdcOPPool = '0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003';
   const rewardOPPool = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
-  const Strategy = await ethers.getContractFactory('ReaperStrategyPuff');
+  const Strategy = await ethers.getContractFactory('ReaperStrategyRocketFuel');
 
   const treasuryAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
   const paymentSplitterAddress = '0x2b394b228908fb7DAcafF5F340f1b442a39B056C';
