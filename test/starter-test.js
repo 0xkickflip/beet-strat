@@ -24,13 +24,13 @@ const paymentSplitterAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
 const superAdminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 const adminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
 const guardianAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
-const wantAddress = '0xeFb0D9F51EFd52d7589A9083A6d0CA4de416c249';
+const wantAddress = '0x4Fd63966879300caFafBB35D157dC5229278Ed23';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
-const joinErcAddress = '0x00a35FD824c717879BF370E70AC6868b95870Dfb'; // IB
+const joinErcAddress = '0x4200000000000000000000000000000000000006'; // IB
 const WETHUsdcPool = '0x5028497af0c9a54ea8c6d42a054c0341b9fc6168000100000000000000000004';
 
 
-const wantHolderAddr = '0xD131F1BcDd547e067Af447dD3C36C99d6be9FdEB';
+const wantHolderAddr = '0xf7801B408c5e3D352E9D67eE2774ae82800BC2D7';
 const unassignedRoleAddr = '0x00dEe1F836998bcc736022f314dF906588d44808';
 const ownerAddr = '0xD46acbA18e4f3C8b8b6c501DF1a6B05609a642Bd';
 const strategistAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
@@ -73,11 +73,11 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyPuff');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyRocketFuel');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, 'Puff the Magic Dragon Beethoven-X Crypt', 'rfBPT-IBETH', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(wantAddress, 'Rocket Fuel Beethoven-X Crypt', 'rfBPT-BPT-rETH-ETH', 0, ethers.constants.MaxUint256);
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
@@ -123,7 +123,7 @@ describe('Vaults', function () {
     // Upgrade tests are ok to skip IFF no changes to BaseStrategy are made
     it('should not allow implementation upgrades without initiating cooldown', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyPuff2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
@@ -131,13 +131,13 @@ describe('Vaults', function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await strategy.initiateUpgradeCooldown();
 
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyPuff3');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel3');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
     it('should allow implementation upgrades once timelock has passed', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyPuff2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
@@ -146,13 +146,13 @@ describe('Vaults', function () {
 
     it('successive upgrades need to initiate timelock again', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyPuff2');
+      const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
       await strategy.initiateUpgradeCooldown();
       await moveTimeForward(timeToSkip.toNumber());
       await upgrades.upgradeProxy(strategy.address, StrategyV2);
 
-      const StrategyV3 = await ethers.getContractFactory('ReaperStrategyPuff3');
+      const StrategyV3 = await ethers.getContractFactory('ReaperStrategyRocketFuel3');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV3)).to.be.reverted;
 
       await strategy.initiateUpgradeCooldown();

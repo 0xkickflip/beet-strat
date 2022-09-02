@@ -2,8 +2,8 @@ async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
   const wantAddress = '0x4Fd63966879300caFafBB35D157dC5229278Ed23';
-  const tokenName = 'Puff the Magic Dragon Beethoven-X Crypt';
-  const tokenSymbol = 'rfBPT-IBETH';
+  const tokenName = 'Rocket Fuel Beethoven-X Crypt';
+  const tokenSymbol = 'rfBPT-BPT-rETH-ETH';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 
