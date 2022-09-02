@@ -7,9 +7,8 @@ async function main() {
   const gauge = '0x38f79beFfC211c6c439b0A3d10A0A673EE63AFb4';
   const intermediate = '0x4200000000000000000000000000000000000042'; //OP
 
-  const WETHUsdcPool = '0x5028497af0c9a54ea8c6d42a054c0341b9fc6168000100000000000000000004';
-  const rewardWETHPool1 = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
-  const rewardWETHPool2 = '0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003';
+  const WETHUsdcOPPool = '0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003';
+  const rewardOPPool = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
   const Strategy = await ethers.getContractFactory('ReaperStrategyPuff');
 
   const treasuryAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
@@ -35,9 +34,8 @@ async function main() {
       joinErc,
       gauge,
       intermediate,
-      WETHUsdcPool,
-      rewardWETHPool1,
-      rewardWETHPool2
+      WETHUsdcOPPool,
+      rewardOPPool
     ],
     {kind: 'uups', timeout: 0},
   );
