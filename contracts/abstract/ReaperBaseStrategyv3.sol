@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: agpl-3.0
 
 pragma solidity ^0.8.0;
 
@@ -54,22 +54,17 @@ abstract contract ReaperBaseStrategyv3 is
      * @dev Reaper contracts:
      * {treasury} - Address of the Reaper treasury
      * {vault} - Address of the vault that controls the strategy's funds.
-     * {strategistRemitter} - Address where strategist fee is remitted to.
      */
     address public treasury;
     address public vault;
-    address public strategistRemitter;
 
     /**
      * Fee related constants:
      * {MAX_FEE} - Maximum fee allowed by the strategy. Hard-capped at 10%.
-     * {STRATEGIST_MAX_FEE} - Maximum strategist fee allowed by the strategy (as % of treasury fee).
-     *                        Hard-capped at 50%
      * {MAX_SECURITY_FEE} - Maximum security fee charged on withdrawal to prevent
      *                      flash deposit/harvest attacks.
      */
     uint256 public constant MAX_FEE = 1000;
-    uint256 public constant STRATEGIST_MAX_FEE = 5000;
     uint256 public constant MAX_SECURITY_FEE = 10;
 
     /**
@@ -79,7 +74,6 @@ abstract contract ReaperBaseStrategyv3 is
      *
      * {callFee} - Percent of the totalFee reserved for the harvester (1000 = 10% of total fee: 0.45% by default)
      * {treasuryFee} - Percent of the totalFee taken by maintainers of the software (9000 = 90% of total fee: 4.05% by default)
-     * {strategistFee} - Percent of the treasuryFee taken by strategist (2500 = 25% of treasury fee: 1.0125% by default)
      *
      * {securityFee} - Fee taxed when a user withdraws funds. Taken to prevent flash deposit/harvest attacks.
      * These funds are redistributed to stakers in the pool.
@@ -87,26 +81,23 @@ abstract contract ReaperBaseStrategyv3 is
     uint256 public totalFee;
     uint256 public callFee;
     uint256 public treasuryFee;
-    uint256 public strategistFee;
     uint256 public securityFee;
 
     /**
      * {TotalFeeUpdated} Event that is fired each time the total fee is updated.
-     * {FeesUpdated} Event that is fired each time callFee+treasuryFee+strategistFee are updated.
+     * {FeesUpdated} Event that is fired each time callFee+treasuryFee are updated.
      * {StratHarvest} Event that is fired each time the strategy gets harvested.
-     * {StrategistRemitterUpdated} Event that is fired each time the strategistRemitter address is updated.
      */
     event TotalFeeUpdated(uint256 newFee);
-    event FeesUpdated(uint256 newCallFee, uint256 newTreasuryFee, uint256 newStrategistFee);
+    event FeesUpdated(uint256 newCallFee, uint256 newTreasuryFee);
     event StratHarvest(address indexed harvester);
-    event StrategistRemitterUpdated(address newStrategistRemitter);
 
     /// @custom:oz-upgrades-unsafe-allow constructor
     constructor() initializer {}
 
     function __ReaperBaseStrategy_init(
         address _vault,
-        address[] memory _feeRemitters,
+        address _treasury,
         address[] memory _strategists,
         address[] memory _multisigRoles
     ) internal onlyInitializing {
@@ -118,14 +109,12 @@ abstract contract ReaperBaseStrategyv3 is
         totalFee = 450;
         callFee = 1000;
         treasuryFee = 9000;
-        strategistFee = 2500;
         securityFee = 10;
 
         vault = _vault;
-        treasury = _feeRemitters[0];
-        strategistRemitter = _feeRemitters[1];
+        treasury = _treasury;
 
-        for (uint256 i = 0; i < _strategists.length; i++) {
+        for (uint256 i = 0; i < _strategists.length; i = _uncheckedInc(i)) {
             _grantRole(STRATEGIST, _strategists[i]);
         }
 
@@ -261,25 +250,15 @@ abstract contract ReaperBaseStrategyv3 is
      * @dev updates the call fee, treasury fee, and strategist fee
      *      call Fee + treasury Fee must add up to PERCENT_DIVISOR
      *
-     *      strategist fee is expressed as % of the treasury fee and
-     *      must be no more than STRATEGIST_MAX_FEE
-     *
      *      only DEFAULT_ADMIN_ROLE.
      */
-    function updateFees(
-        uint256 _callFee,
-        uint256 _treasuryFee,
-        uint256 _strategistFee
-    ) external returns (bool) {
+    function updateFees(uint256 _callFee, uint256 _treasuryFee) external {
         _atLeastRole(DEFAULT_ADMIN_ROLE);
         require(_callFee + _treasuryFee == PERCENT_DIVISOR);
-        require(_strategistFee <= STRATEGIST_MAX_FEE);
 
         callFee = _callFee;
         treasuryFee = _treasuryFee;
-        strategistFee = _strategistFee;
-        emit FeesUpdated(callFee, treasuryFee, strategistFee);
-        return true;
+        emit FeesUpdated(callFee, treasuryFee);
     }
 
     function updateSecurityFee(uint256 _securityFee) external {
@@ -291,20 +270,9 @@ abstract contract ReaperBaseStrategyv3 is
     /**
      * @dev only DEFAULT_ADMIN_ROLE can update treasury address.
      */
-    function updateTreasury(address newTreasury) external returns (bool) {
+    function updateTreasury(address newTreasury) external {
         _atLeastRole(DEFAULT_ADMIN_ROLE);
         treasury = newTreasury;
-        return true;
-    }
-
-    /**
-     * @dev Updates the current strategistRemitter. Only DEFAULT_ADMIN_ROLE may do this.
-     */
-    function updateStrategistRemitter(address _newStrategistRemitter) external {
-        _atLeastRole(DEFAULT_ADMIN_ROLE);
-        require(_newStrategistRemitter != address(0));
-        strategistRemitter = _newStrategistRemitter;
-        emit StrategistRemitterUpdated(_newStrategistRemitter);
     }
 
     /**
@@ -372,29 +340,40 @@ abstract contract ReaperBaseStrategyv3 is
     }
 
     /**
-     * @dev Internal function that checks cascading role privileges. Any higher privileged role
+     * @notice Internal function that checks cascading role privileges. Any higher privileged role
      * should be able to perform all the functions of any lower privileged role. This is
      * accomplished using the {cascadingAccess} array that lists all roles from most privileged
      * to least privileged.
+     * @param role - The role in bytes from the keccak256 hash of the role name
      */
     function _atLeastRole(bytes32 role) internal view {
         uint256 numRoles = cascadingAccess.length;
-        uint256 specifiedRoleIndex;
-        for (uint256 i = 0; i < numRoles; i++) {
+        bool specifiedRoleFound = false;
+        bool senderHighestRoleFound = false;
+
+        // The specified role must be found in the {cascadingAccess} array.
+        // Also, msg.sender's highest role index <= specified role index.
+        for (uint256 i = 0; i < numRoles; i = _uncheckedInc(i)) {
+            if (!senderHighestRoleFound && hasRole(cascadingAccess[i], msg.sender)) {
+                senderHighestRoleFound = true;
+            }
             if (role == cascadingAccess[i]) {
-                specifiedRoleIndex = i;
+                specifiedRoleFound = true;
                 break;
-            } else if (i == numRoles - 1) {
-                revert();
             }
         }
 
-        for (uint256 i = 0; i <= specifiedRoleIndex; i++) {
-            if (hasRole(cascadingAccess[i], msg.sender)) {
-                break;
-            } else if (i == specifiedRoleIndex) {
-                revert();
-            }
+        require(specifiedRoleFound && senderHighestRoleFound, "Unauthorized access");
+    }
+
+    /**
+     * @notice For doing an unchecked increment of an index for gas optimization purposes
+     * @param i - The number to increment
+     * @return The incremented number
+     */
+    function _uncheckedInc(uint256 i) internal pure returns (uint256) {
+        unchecked {
+            return i + 1;
         }
     }
 
