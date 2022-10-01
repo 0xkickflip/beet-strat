@@ -1,6 +1,7 @@
 const {time, loadFixture, mine} = require('@nomicfoundation/hardhat-network-helpers');
 const {ethers, network, upgrades} = require('hardhat');
 const {expect} = require('chai');
+require('dotenv').config();
 
 const moveTimeForward = async (seconds) => {
   await time.increase(seconds);
@@ -18,33 +19,21 @@ const toWantUnit = (num, isUSDC = false) => {
   return ethers.utils.parseEther(num);
 };
 
-const treasuryAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
-const paymentSplitterAddr = '0x1E71AEE6081f62053123140aacC7a06021D77348';
+const treasuryAddr = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
 
-const superAdminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
-const adminAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
-const guardianAddress = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
-const wantAddress = '0x4Fd63966879300caFafBB35D157dC5229278Ed23';
-const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
-const joinErcAddress = '0x4200000000000000000000000000000000000006'; // IB
-const WETHUsdcOPPool = '0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003';
-
-
-const wantHolderAddr = '0xf7801B408c5e3D352E9D67eE2774ae82800BC2D7';
-const unassignedRoleAddr = '0x00dEe1F836998bcc736022f314dF906588d44808';
-const ownerAddr = '0xD46acbA18e4f3C8b8b6c501DF1a6B05609a642Bd';
-const strategistAddr = '0x4C3490dF15edFa178333445ce568EC6D99b5d71c';
+const superAdminAddress = '0x9BC776dBb134Ef9D7014dB1823Cd755Ac5015203';
+const adminAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
+const guardianAddress = '0xb0C9D5851deF8A2Aac4A23031CA2610f8C3483F9';
+const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
+const wantAddress = '0x6222ae1d2a9f6894dA50aA25Cb7b303497f9BEbd';
+const gauge = '0xDC785Bc8280D8fdB89aEb4980e061e34a34e71d4';
+const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 
-const gauge = '0x38f79beFfC211c6c439b0A3d10A0A673EE63AFb4';
-const intermediate = '0x4200000000000000000000000000000000000042'; //OP
-
-const rewardOPPool = '0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006';
-
-
+const wantHolderAddr = '0x43C4fF14DAe2Fbb389Dd94498C3D610A0c69a89d';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -54,16 +43,14 @@ describe('Vaults', function () {
       params: [
         {
           forking: {
-            jsonRpcUrl: 'https://mainnet.optimism.io',
-            blockNumber: 21711485,
+            jsonRpcUrl: process.env.OPT_MAINNET_URL,
           },
         },
       ],
     });
 
     // get signers
-    const unassignedRole = await ethers.getImpersonatedSigner(unassignedRoleAddr);
-    const owner = await ethers.getImpersonatedSigner(ownerAddr);
+    const [owner, unassignedRole] = await ethers.getSigners();
     const wantHolder = await ethers.getImpersonatedSigner(wantHolderAddr);
     const strategist = await ethers.getImpersonatedSigner(strategistAddr);
     const guardian = await ethers.getImpersonatedSigner(guardianAddress);
@@ -72,25 +59,21 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyRocketFuel');
+    const Strategy = await ethers.getContractFactory('ReaperStrategySteadyBeets');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, 'Rocket Fuel Beethoven-X Crypt', 'rfBPT-BPT-rETH-ETH', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(wantAddress, 'Steady Beets Boosted Beethoven-X Crypt', 'rf-bb-rf-aUSD', 0, ethers.constants.MaxUint256);
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
       [
         vault.address,
-        [treasuryAddr, paymentSplitterAddr],
+        treasuryAddr,
         strategists,
         multisigRoles,
         wantAddress,
-        joinErcAddress,
         gauge,
-        intermediate,
-        WETHUsdcOPPool,
-        rewardOPPool,
       ],
       {kind: 'uups'},
     );
@@ -98,7 +81,18 @@ describe('Vaults', function () {
     await vault.initialize(strategy.address);
     const want = await Want.attach(wantAddress);
     const usdc = await Want.attach(usdcAddress);
-    const join = await Want.attach(joinErcAddress);
+
+    // send some funds to wantHolder and strategist
+    let tx = await owner.sendTransaction({
+      to: wantHolderAddr,
+      value: ethers.utils.parseEther('1.0'),
+    });
+    await tx.wait();
+    tx = await owner.sendTransaction({
+      to: strategistAddr,
+      value: ethers.utils.parseEther('1.0'),
+    });
+    await tx.wait();
 
     // approving LP token and vault share spend
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
@@ -119,13 +113,13 @@ describe('Vaults', function () {
     });
 
     // Upgrade tests are ok to skip IFF no changes to BaseStrategy are made
-    it('should not allow implementation upgrades without initiating cooldown', async function () {
+    xit('should not allow implementation upgrades without initiating cooldown', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
-    it('should not allow implementation upgrades before timelock has passed', async function () {
+    xit('should not allow implementation upgrades before timelock has passed', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await strategy.initiateUpgradeCooldown();
 
@@ -133,7 +127,7 @@ describe('Vaults', function () {
       await expect(upgrades.upgradeProxy(strategy.address, StrategyV2)).to.be.reverted;
     });
 
-    it('should allow implementation upgrades once timelock has passed', async function () {
+    xit('should allow implementation upgrades once timelock has passed', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
@@ -142,7 +136,7 @@ describe('Vaults', function () {
       await upgrades.upgradeProxy(strategy.address, StrategyV2);
     });
 
-    it('successive upgrades need to initiate timelock again', async function () {
+    xit('successive upgrades need to initiate timelock again', async function () {
       const {strategy} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const StrategyV2 = await ethers.getContractFactory('ReaperStrategyRocketFuel2');
       const timeToSkip = (await strategy.UPGRADE_TIMELOCK()).add(10);
@@ -333,8 +327,8 @@ describe('Vaults', function () {
 
     it('should be able to harvest', async function () {
       const {vault, strategy, usdc, wantHolder, owner} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      await vault.connect(wantHolder).deposit(toWantUnit('0.1'));
-      await moveTimeForward(3600);
+      await vault.connect(wantHolder).depositAll();
+      await moveTimeForward(7200);
       const readOnlyStrat = await strategy.connect(ethers.provider);
       const predictedCallerFee = await readOnlyStrat.callStatic.harvest();
       console.log(`predicted caller fee ${ethers.utils.formatEther(predictedCallerFee)}`);
@@ -349,10 +343,8 @@ describe('Vaults', function () {
     it('should provide yield', async function () {
       const {vault, strategy, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const timeToSkip = 3600;
-      const initialUserBalance = await want.balanceOf(wantHolderAddr);
-      const depositAmount = initialUserBalance.div(10);
 
-      await vault.connect(wantHolder).deposit(depositAmount);
+      await vault.connect(wantHolder).depositAll();
       const initialVaultBalance = await vault.balance();
 
       await strategy.updateHarvestLogCadence(timeToSkip / 2);
