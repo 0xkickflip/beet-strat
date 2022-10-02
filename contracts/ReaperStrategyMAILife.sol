@@ -11,9 +11,9 @@ import "./interfaces/IRewardsOnlyGauge.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the Steady Beets, Boosted pool.
+ * @dev LP compounding strategy for the "It's MAI life" pool.
  */
-contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
+contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -23,7 +23,7 @@ contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
      * @dev Tokens Used:
      * {OP} - Reward token for staking LP into gauge.
      * {OP_LINEAR} - OP Linear pool, used as intermediary token to swap {OP} to {USDC}.
-     * {USD_STABLE} - USD Composable stable pool, also happens to be want.
+     * {USD_STABLE} - USD Composable stable pool.
      * {USDC} - Underlying token of the want LP used to swap in to the want. Also used to charge fees
      * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make more want.
      * {want} - LP token for the Beethoven-x pool.
@@ -39,6 +39,7 @@ contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
     bytes32 public constant OP_LINEAR_POOL = 0xa4e597c1bd01859b393b124ce18427aa4426a87100000000000000000000004c;
     bytes32 public constant HAPPY_ROAD_RELOADED = 0xb0de49429fbb80c635432bbad0b3965b2856017700010000000000000000004e;
     bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
+    bytes32 public constant STEADY_BEETS_BOOSTED = 0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046;
 
     /**
      * @dev Strategy variables
@@ -99,6 +100,7 @@ contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
     function _harvestCore() internal override returns (uint256 callerFee) {
         _claimRewards();
         callerFee = _performSwapsAndChargeFees();
+        _addLiquidity();
         deposit();
     }
 
@@ -118,16 +120,14 @@ contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
         // OP -> OP_LINEAR using OP_LINEAR_POOL
         _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
 
-        uint256 wantBalance = want.balanceOf(address(this));
         // OP_LINEAR -> USD_STABLE using HAPPY_ROAD_RELOADED
         _beethovenSwap(OP_LINEAR, USD_STABLE, OP_LINEAR.balanceOf(address(this)), HAPPY_ROAD_RELOADED);
-        uint256 usdStableGenerated = USD_STABLE.balanceOf(address(this)) - wantBalance;
 
-        // convert totalFee% of usdStableGenerated to USDC for fee. Leave rest as want to re-deposit.
-        uint256 usdStableFee = (usdStableGenerated * totalFee) / PERCENT_DIVISOR;
+        // convert totalFee% of USD_STABLE balance to USDC for fee. Leave rest for making more want.
+        uint256 usdStableFee = (USD_STABLE.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         if (usdStableFee != 0) {
-            // USD_STABLE -> USDC_LINEAR using beetsPoolId
-            _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, beetsPoolId);
+            // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
+            _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
 
             // USDC_LINEAR -> USDC using USDC_LINEAR_POOL
             _beethovenSwap(USDC_LINEAR, USDC, USDC_LINEAR.balanceOf(address(this)), USDC_LINEAR_POOL);
@@ -141,6 +141,15 @@ contract ReaperStrategySteadyBeets is ReaperBaseStrategyv3 {
                 USDC.safeTransfer(treasury, treasuryFeeToVault);
             }
         }
+    }
+
+    /**
+     * @dev Core harvest function.
+     *      Converts reward tokens to want
+     */
+    function _addLiquidity() internal {
+        // remaining USD_STABLE -> want using beetsPoolId
+        _beethovenSwap(USD_STABLE, want, USD_STABLE.balanceOf(address(this)), beetsPoolId);
     }
 
     /**
