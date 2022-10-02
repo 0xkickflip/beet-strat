@@ -11,9 +11,9 @@ import "./interfaces/IRewardsOnlyGauge.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the Happy Road Reloaded pool.
+ * @dev LP compounding strategy for the Wonderwall pool.
  */
-contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
+contract ReaperStrategyWonderwall is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -41,16 +41,17 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     bytes32 public constant OP_LINEAR_POOL = 0xa4e597c1bd01859b393b124ce18427aa4426a87100000000000000000000004c;
     bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
     bytes32 public constant STEADY_BEETS_BOOSTED = 0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046;
+    bytes32 public constant HAPPY_ROAD_RELOADED = 0xb0de49429fbb80c635432bbad0b3965b2856017700010000000000000000004e;
 
     /**
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
+     * {usdStablePosition} - Index of {USD_STABLE} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public opLinearPosition;
+    uint256 public usdStablePosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -71,8 +72,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(OP_LINEAR)) {
-                opLinearPosition = i;
+            if (address(tokens[i]) == address(USD_STABLE)) {
+                usdStablePosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -132,15 +133,10 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
         // OP -> OP_LINEAR using OP_LINEAR_POOL
         _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
 
-        // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
-        _beethovenSwap(
-            OP_LINEAR,
-            USD_STABLE,
-            (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            beetsPoolId
-        );
+        // OP_LINEAR -> USD_STABLE using HAPPY_ROAD_RELOADED
+        _beethovenSwap(OP_LINEAR, USD_STABLE, OP_LINEAR.balanceOf(address(this)), HAPPY_ROAD_RELOADED);
 
-        uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
+        uint256 usdStableFee = (USD_STABLE.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         if (usdStableFee != 0) {
             // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
             _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
@@ -164,12 +160,12 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        // remaining OP_LINEAR used to join pool
-        uint256 opLinearBal = OP_LINEAR.balanceOf(address(this));
-        if (opLinearBal != 0) {
+        // remaining USD_STABLE used to join pool
+        uint256 usdStableBal = USD_STABLE.balanceOf(address(this));
+        if (usdStableBal != 0) {
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
             uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[opLinearPosition] = opLinearBal;
+            amountsIn[usdStablePosition] = usdStableBal;
             uint256 minAmountOut = 1;
             bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
