@@ -29,11 +29,11 @@ const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
-const wantAddress = '0x6222ae1d2a9f6894dA50aA25Cb7b303497f9BEbd';
-const gauge = '0xDC785Bc8280D8fdB89aEb4980e061e34a34e71d4';
+const wantAddress = '0x1F131EC1175f023ee1534B16FA8aB237c00e2381';
+const gauge = '0x1bc536D34897603f562d94601d16F67b4d497eBC';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 
-const wantHolderAddr = '0x43C4fF14DAe2Fbb389Dd94498C3D610A0c69a89d';
+const wantHolderAddr = '0x5e46f0D1B3e1Cf21d584FB557F98eb3EA4A19059';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -43,7 +43,7 @@ describe('Vaults', function () {
       params: [
         {
           forking: {
-            jsonRpcUrl: process.env.OPT_MAINNET_URL,
+            jsonRpcUrl: 'https://late-fragrant-rain.optimism.quiknode.pro/70171d2e7790f3af6a833f808abe5e85ed6bd881/',
           },
         },
       ],
@@ -59,11 +59,11 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategySteadyBeets');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyMAILife');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, 'Steady Beets Boosted Beethoven-X Crypt', 'rf-bb-rf-aUSD', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(wantAddress, `It's MAI Life Beethoven-X Crypt`, 'rf-bbrfaUSD-MAI', 0, ethers.constants.MaxUint256);
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
