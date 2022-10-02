@@ -11,9 +11,9 @@ import "./interfaces/IRewardsOnlyGauge.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the "It's MAI life" pool.
+ * @dev LP compounding strategy for the Happy Road Reloaded pool.
  */
-contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
+contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -24,9 +24,10 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
      * {OP} - Reward token for staking LP into gauge.
      * {OP_LINEAR} - OP Linear pool, used as intermediary token to swap {OP} to {USDC}.
      * {USD_STABLE} - USD Composable stable pool.
-     * {USDC} - Underlying token of the want LP used to swap in to the want. Also used to charge fees
-     * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make more want.
+     * {USDC} - Used to charge fees
+     * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make {USDC}.
      * {want} - LP token for the Beethoven-x pool.
+     * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
     IERC20Upgradeable public constant OP_LINEAR = IERC20Upgradeable(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
@@ -34,10 +35,10 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
     IERC20Upgradeable public want;
+    IAsset[] public underlyings;
 
     // pools used to swap tokens
     bytes32 public constant OP_LINEAR_POOL = 0xa4e597c1bd01859b393b124ce18427aa4426a87100000000000000000000004c;
-    bytes32 public constant HAPPY_ROAD_RELOADED = 0xb0de49429fbb80c635432bbad0b3965b2856017700010000000000000000004e;
     bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
     bytes32 public constant STEADY_BEETS_BOOSTED = 0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046;
 
@@ -45,9 +46,11 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
+     * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
+    uint256 public opLinearPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -65,6 +68,15 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
         want = _want;
         gauge = _gauge;
         beetsPoolId = IBasePool(address(want)).getPoolId();
+
+        (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            if (address(tokens[i]) == address(OP_LINEAR)) {
+                opLinearPosition = i;
+            }
+
+            underlyings.push(IAsset(address(tokens[i])));
+        }
     }
 
     /**
@@ -120,11 +132,15 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
         // OP -> OP_LINEAR using OP_LINEAR_POOL
         _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
 
-        // OP_LINEAR -> USD_STABLE using HAPPY_ROAD_RELOADED
-        _beethovenSwap(OP_LINEAR, USD_STABLE, OP_LINEAR.balanceOf(address(this)), HAPPY_ROAD_RELOADED);
+        // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
+        _beethovenSwap(
+            OP_LINEAR,
+            USD_STABLE,
+            (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
+            beetsPoolId
+        );
 
-        // convert totalFee% of USD_STABLE balance to USDC for fee. Leave rest for making more want.
-        uint256 usdStableFee = (USD_STABLE.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
         if (usdStableFee != 0) {
             // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
             _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
@@ -148,8 +164,23 @@ contract ReaperStrategyMAILife is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        // remaining USD_STABLE -> want using beetsPoolId
-        _beethovenSwap(USD_STABLE, want, USD_STABLE.balanceOf(address(this)), beetsPoolId);
+        // remaining OP_LINEAR used to join pool
+        uint256 opLinearBal = OP_LINEAR.balanceOf(address(this));
+        if (opLinearBal != 0) {
+            IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
+            uint256[] memory amountsIn = new uint256[](underlyings.length);
+            amountsIn[opLinearPosition] = opLinearBal;
+            uint256 minAmountOut = 1;
+            bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
+
+            IBeetVault.JoinPoolRequest memory request;
+            request.assets = underlyings;
+            request.maxAmountsIn = amountsIn;
+            request.userData = userData;
+            request.fromInternalBalance = false;
+
+            BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
+        }
     }
 
     /**
