@@ -29,11 +29,11 @@ const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
-const wantAddress = '0x1F131EC1175f023ee1534B16FA8aB237c00e2381';
-const gauge = '0x1bc536D34897603f562d94601d16F67b4d497eBC';
+const wantAddress = '0xB0de49429fBb80c635432bbAD0B3965b28560177';
+const gauge = '0x3CE5dD8D3C2DF2bb599A94523509004d2af17516';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 
-const wantHolderAddr = '0x5e46f0D1B3e1Cf21d584FB557F98eb3EA4A19059';
+const wantHolderAddr = '0x3b410908e71Ee04e7dE2a87f8F9003AFe6c1c7cE';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -59,11 +59,11 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyMAILife');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoadReloaded');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, `It's MAI Life Beethoven-X Crypt`, 'rf-bbrfaUSD-MAI', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(wantAddress, `Happy Road Reloaded Beethoven-X Crypt`, 'rf-bb-HAPPY', 0, ethers.constants.MaxUint256);
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
