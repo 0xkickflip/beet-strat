@@ -13,9 +13,9 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeab
 import "hardhat/console.sol";
 
 /**
- * @dev LP compounding strategy for the LidoShuffle pool.
+ * @dev LP compounding strategy for the Yellow Submarine pool.
  */
-contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
+contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -57,6 +57,7 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
     uint256 public wstethPosition;
+    uint256 public usdStablePosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -77,8 +78,12 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(WSTETH)) {
+            address token = address(tokens[i]);
+            if (token == address(WSTETH)) {
                 wstethPosition = i;
+                console.log("wstethPosition: ", i);
+            } else if (token == address(USD_STABLE)) {
+                usdStablePosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -120,7 +125,7 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
         _claimRewards();
         callerFee = _performSwapsAndChargeFees();
         _addLiquidity();
-        deposit();
+        // deposit();
     }
 
     /**
@@ -164,12 +169,6 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
                 USDC.safeTransfer(treasury, treasuryFeeToVault);
             }
         }
-        _beethovenSwap(
-            USD_STABLE,
-            WSTETH,
-            USD_STABLE.balanceOf(address(this)),
-            YELLOW_SUBMARINE
-        );
     }
 
     /**
@@ -177,7 +176,26 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        _beethovenSwap(WSTETH, want, WSTETH.balanceOf(address(this)), beetsPoolId);
+        uint256 wstethBalance = WSTETH.balanceOf(address(this));
+        uint256 usdStableBalance = USD_STABLE.balanceOf(address(this));
+        if (!(wstethBalance == 0 && usdStableBalance == 0)) {
+            IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
+            uint256[] memory amountsIn = new uint256[](underlyings.length);
+            amountsIn[wstethPosition] = wstethBalance;
+            amountsIn[usdStablePosition] = usdStableBalance;
+            uint256 minAmountOut = 1;
+            bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
+
+            IBeetVault.JoinPoolRequest memory request;
+            request.assets = underlyings;
+            request.maxAmountsIn = amountsIn;
+            request.userData = userData;
+            request.fromInternalBalance = false;
+            console.log("wstethBalance: ", wstethBalance);
+            console.log("usdStableBalance: ", usdStableBalance);
+
+            BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
+        }
     }
 
     /**
