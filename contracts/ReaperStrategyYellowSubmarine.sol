@@ -193,7 +193,7 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
             request.fromInternalBalance = false;
             console.log("wstethBalance: ", wstethBalance);
             console.log("usdStableBalance: ", usdStableBalance);
-
+            WSTETH.safeIncreaseAllowance(address(BEET_VAULT), wstethBalance);
             BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
         }
     }

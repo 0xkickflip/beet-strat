@@ -115,7 +115,7 @@ describe('Vaults', function () {
     };
   }
 
-  xdescribe('Deploying the vault and strategy', function () {
+  describe('Deploying the vault and strategy', function () {
     it('should initiate vault with a 0 balance', async function () {
       const {vault} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const totalBalance = await vault.balance();
@@ -127,7 +127,7 @@ describe('Vaults', function () {
     });
   });
 
-  xdescribe('Access control tests', function () {
+  describe('Access control tests', function () {
     it('unassignedRole has no privileges', async function () {
       const {strategy, unassignedRole} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await expect(strategy.connect(unassignedRole).updateHarvestLogCadence(10)).to.be.revertedWith(
@@ -205,7 +205,7 @@ describe('Vaults', function () {
   });
 
   describe('Vault Tests', function () {
-    xit('should allow deposits and account for them correctly', async function () {
+    it('should allow deposits and account for them correctly', async function () {
       const {vault, wantHolder, wantBalance} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const depositAmount = wantBalance;
       await vault.connect(wantHolder).deposit(depositAmount);
@@ -215,7 +215,7 @@ describe('Vaults', function () {
       expect(depositAmount).to.be.closeTo(newVaultBalance, allowedInaccuracy);
     });
 
-    xit('should mint user their pool share', async function () {
+    it('should mint user their pool share', async function () {
       const {vault, want, wantHolder, owner, wantBalance} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const depositAmount = wantBalance.div(2);
       await vault.connect(wantHolder).deposit(depositAmount);
@@ -239,7 +239,7 @@ describe('Vaults', function () {
       expect(afterOwnerVaultBalance).to.equal(0);
     });
 
-    xit('should allow withdrawals', async function () {
+    it('should allow withdrawals', async function () {
       const {vault, want, wantHolder, wantBalance} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const userBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = wantBalance;
@@ -257,7 +257,7 @@ describe('Vaults', function () {
       expect(isSmallBalanceDifference).to.equal(true);
     });
 
-    xit('should allow small withdrawal', async function () {
+    it('should allow small withdrawal', async function () {
       const {vault, want, wantHolder, owner} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const userBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = toWantUnit('0.0000001');
@@ -280,7 +280,7 @@ describe('Vaults', function () {
       expect(isSmallBalanceDifference).to.equal(true);
     });
 
-    xit('should handle small deposit + withdraw', async function () {
+    it('should handle small deposit + withdraw', async function () {
       const {vault, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const userBalance = await want.balanceOf(wantHolderAddr);
       const depositAmount = toWantUnit('0.0000000000001');
@@ -307,12 +307,12 @@ describe('Vaults', function () {
 
       const usdcBalBefore = await usdc.balanceOf(owner.address);
       await strategy.harvest();
-      // const usdcBalAfter = await usdc.balanceOf(owner.address);
-      // const usdcBalDifference = usdcBalAfter.sub(usdcBalBefore);
-      // console.log(`actual caller fee ${ethers.utils.formatEther(usdcBalDifference)}`);
+      const usdcBalAfter = await usdc.balanceOf(owner.address);
+      const usdcBalDifference = usdcBalAfter.sub(usdcBalBefore);
+      console.log(`actual caller fee ${ethers.utils.formatEther(usdcBalDifference)}`);
     });
 
-    xit('should provide yield', async function () {
+    it('should provide yield', async function () {
       const {vault, strategy, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const timeToSkip = 3600;
 
@@ -335,11 +335,11 @@ describe('Vaults', function () {
     });
   });
 
-  xdescribe('Strategy', function () {
+  describe('Strategy', function () {
     it('should be able to pause and unpause', async function () {
-      const {vault, strategy, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
+      const {vault, strategy, wantHolder, wantBalance} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await strategy.pause();
-      const depositAmount = toWantUnit('0.1');
+      const depositAmount = wantBalance;
       await expect(vault.connect(wantHolder).deposit(depositAmount)).to.be.reverted;
 
       await strategy.unpause();
