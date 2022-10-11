@@ -2,7 +2,7 @@ const hre = require('hardhat');
 
 async function main() {
   const vaultAddress = '0x7e66050192E5D74f311DEf92471394A2232a90f9';
-  const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoadReloaded');
+  const Strategy = await ethers.getContractFactory('ReaperStrategyLidoShuffle');
 
   const treasuryAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
 
@@ -14,7 +14,7 @@ async function main() {
   const superAdmin = '0x9BC776dBb134Ef9D7014dB1823Cd755Ac5015203';
   const admin = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
   const guardian = '0xb0C9D5851deF8A2Aac4A23031CA2610f8C3483F9';
-  
+
   const want = '0xB0de49429fBb80c635432bbAD0B3965b28560177';
   const gauge = '0x3CE5dD8D3C2DF2bb599A94523509004d2af17516';
 
@@ -26,7 +26,7 @@ async function main() {
       [strategist1, strategist2, strategist3, strategist4],
       [superAdmin, admin, guardian],
       want,
-      gauge
+      gauge,
     ],
     {kind: 'uups', timeout: 0},
   );

@@ -59,22 +59,21 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoadReloaded');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyLidoShuffle');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, `Happy Road Reloaded Beethoven-X Crypt`, 'rf-bb-HAPPY', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(
+      wantAddress,
+      `Happy Road Reloaded Beethoven-X Crypt`,
+      'rf-bb-HAPPY',
+      0,
+      ethers.constants.MaxUint256,
+    );
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
-      [
-        vault.address,
-        treasuryAddr,
-        strategists,
-        multisigRoles,
-        wantAddress,
-        gauge,
-      ],
+      [vault.address, treasuryAddr, strategists, multisigRoles, wantAddress, gauge],
       {kind: 'uups'},
     );
     await strategy.deployed();
