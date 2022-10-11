@@ -25,7 +25,6 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
      * @dev Tokens Used:
      * {LDO} - Reward token for staking LP into gauge.
      * {BEETS} - Reward token for staking LP into gauge.
-     * {OP_LINEAR} - LDO Linear pool, used as intermediary token to swap {LDO} to {USDC}.
      * {USD_STABLE} - USD Composable stable pool.
      * {USDC} - Used to charge fees
      * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make {USDC}.
@@ -35,7 +34,6 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
      */
     IERC20Upgradeable public constant LDO = IERC20Upgradeable(0xFdb794692724153d1488CcdBE0C56c252596735F);
     IERC20Upgradeable public constant BEETS = IERC20Upgradeable(0x97513e975a7fA9072c72C92d8000B0dB90b163c5);
-    IERC20Upgradeable public constant OP_LINEAR = IERC20Upgradeable(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
     IERC20Upgradeable public constant USD_STABLE = IERC20Upgradeable(0x6222ae1d2a9f6894dA50aA25Cb7b303497f9BEbd);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
@@ -54,7 +52,7 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {wstethPosition} - Index of {OP_LINEAR} in the main pool.
+     * {wstethPosition} - Index of {WSTETH} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
@@ -113,9 +111,10 @@ contract ReaperStrategyLidoShuffle is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {LDO} from gauge.
-     *      2. Swaps all {LDO} and charges fee.
-     *      3. Re-deposits.
+     *      1. Claims {LDO} and {BEETS} from gauge.
+     *      2. Swaps rewards and charges fee.
+     *      3. Swaps to the want token
+     *      4. Re-deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
         _claimRewards();
