@@ -10,8 +10,6 @@ import "./interfaces/IBeetVault.sol";
 import "./interfaces/IRewardsOnlyGauge.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @dev LP compounding strategy for the Yellow Submarine pool.
  */
@@ -43,7 +41,6 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
 
     // pools used to swap tokens
     bytes32 public constant WONDERWALL = 0x359ea8618c405023fc4b98dab1b01f373792a12600010000000000000000004f;
-    bytes32 public constant YELLOW_SUBMARINE = 0x981fb05b738e981ac532a99e77170ecb4bc27aef00010000000000000000004b;
     bytes32 public constant LIDO_SWAN_SONG = 0xc77e5645dbe48d54afc06655e39d3fe17eb76c1c00020000000000000000005c;
     bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
     bytes32 public constant STEADY_BEETS_BOOSTED = 0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046;
@@ -81,7 +78,6 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
             address token = address(tokens[i]);
             if (token == address(WSTETH)) {
                 wstethPosition = i;
-                console.log("wstethPosition: ", i);
             } else if (token == address(USD_STABLE)) {
                 usdStablePosition = i;
             }
@@ -146,7 +142,7 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
             WSTETH,
             USD_STABLE,
             (WSTETH.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            YELLOW_SUBMARINE
+            beetsPoolId
         );
 
         uint256 beetsBalance = BEETS.balanceOf(address(this));
@@ -191,8 +187,6 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
             request.maxAmountsIn = amountsIn;
             request.userData = userData;
             request.fromInternalBalance = false;
-            console.log("wstethBalance: ", wstethBalance);
-            console.log("usdStableBalance: ", usdStableBalance);
             WSTETH.safeIncreaseAllowance(address(BEET_VAULT), wstethBalance);
             BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
         }
