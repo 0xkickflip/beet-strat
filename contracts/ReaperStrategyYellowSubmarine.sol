@@ -50,6 +50,7 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {wstethPosition} - Index of {WSTETH} in the main pool.
+     * {usdStablePosition} - Index of {USD_STABLE} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
@@ -121,7 +122,7 @@ contract ReaperStrategyYellowSubmarine is ReaperBaseStrategyv3 {
         _claimRewards();
         callerFee = _performSwapsAndChargeFees();
         _addLiquidity();
-        // deposit();
+        deposit();
     }
 
     /**
