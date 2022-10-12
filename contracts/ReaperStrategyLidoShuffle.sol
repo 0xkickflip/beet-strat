@@ -10,8 +10,6 @@ import "./interfaces/IBeetVault.sol";
 import "./interfaces/IRewardsOnlyGauge.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
-import "hardhat/console.sol";
-
 /**
  * @dev LP compounding strategy for the LidoShuffle pool.
  */
