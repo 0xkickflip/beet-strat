@@ -24,7 +24,6 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     /**
      * @dev Tokens Used:
      * {OP} - Reward token for staking LP into gauge.
-     * {OP_LINEAR} - OP Linear pool, used as intermediary token to swap {OP} to {USDC}.
      * {USD_STABLE} - USD Composable stable pool.
      * {USDC} - Used to charge fees
      * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make {USDC}.
@@ -32,8 +31,7 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
-    address public constant OP_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
-    address public constant SONNE_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
+    IERC20Upgradeable public constant SONNE = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
     IERC20Upgradeable public want;
@@ -47,11 +45,11 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
+     * {usdcLinearPosition} - Index of {USDC_LINEAR} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public opLinearPosition;
+    uint256 public usdcLinearPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -72,8 +70,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(OP_LINEAR)) {
-                opLinearPosition = i;
+            if (address(tokens[i]) == address(USDC_LINEAR)) {
+                usdcLinearPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -130,33 +128,32 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      Charges fees based on the amount of {OP} gained from reward.
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
-        // OP -> OP_LINEAR using OP_LINEAR_POOL
-        _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
+        // OP and SONNE -> USDC using velo
+        _swap(address(OP), address(USDC), OP.balanceOf(address(this)));
+        _swap(address(SONNE), address(USDC), OP.balanceOf(address(this)));
 
-        // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
+        uint256 totalFee = (USDC_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        uint256 amountAfterFees = USDC_LINEAR.balanceOf(address(this)) - totalFee;
+        // convert amountAfterFees of USDC to USD_LINEAR
         _beethovenSwap(
-            OP_LINEAR,
-            USD_STABLE,
-            (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            beetsPoolId
+            USDC,
+            USDC_LINEAR,
+            amountAfterFees,
+            USDC_LINEAR_POOL
         );
 
-        uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
-        if (usdStableFee != 0) {
-            // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
-            _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
+        uint256 usdcLinBal = USDC_LINEAR.balanceOf(address(this));
 
-            // USDC_LINEAR -> USDC using USDC_LINEAR_POOL
-            _beethovenSwap(USDC_LINEAR, USDC, USDC_LINEAR.balanceOf(address(this)), USDC_LINEAR_POOL);
+        // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
+        _beethovenSwap(USDC_LINEAR, want, usdcLinBal, beetsPoolId);
 
-            uint256 usdcFee = USDC.balanceOf(address(this));
-            if (usdcFee != 0) {
-                callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
-                uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
+        uint256 usdcFee = USDC.balanceOf(address(this));
+        if (usdcFee != 0) {
+            callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
 
-                USDC.safeTransfer(msg.sender, callFeeToUser);
-                USDC.safeTransfer(treasury, treasuryFeeToVault);
-            }
+            USDC.safeTransfer(msg.sender, callFeeToUser);
+            USDC.safeTransfer(treasury, treasuryFeeToVault);
         }
     }
 
@@ -165,12 +162,12 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        // remaining OP_LINEAR used to join pool
-        uint256 opLinearBal = OP_LINEAR.balanceOf(address(this));
-        if (opLinearBal != 0) {
+        // remaining USDC_LINEAR used to join pool
+        uint256 usdcLinearBal = USDC_LINEAR.balanceOf(address(this));
+        if (usdcLinearBal != 0) {
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
             uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[opLinearPosition] = opLinearBal;
+            amountsIn[usdcLinearPosition] = usdcLinearBal;
             uint256 minAmountOut = 1;
             bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -182,6 +179,24 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
             BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
         }
+    }
+
+    /// @dev Helper function to swap {_from} to {_to} given an {_amount}. ONLY VOL
+    function _swap(
+        address _from,
+        address _to,
+        uint256 _amount
+    ) internal {
+        if (_from == _to || _amount == 0) {
+            return;
+        }
+
+        IERC20Upgradeable(_from).safeIncreaseAllowance(VELODROME_ROUTER, _amount);
+        IVeloRouter router = IVeloRouter(VELODROME_ROUTER);
+
+        IVeloRouter.route[] memory routes = new IVeloRouter.route[](1);
+        routes[0] = IVeloRouter.route({from: _from, to: _to, stable: false});
+        router.swapExactTokensForTokens(_amount, 0, routes, address(this), block.timestamp);
     }
 
     /**
