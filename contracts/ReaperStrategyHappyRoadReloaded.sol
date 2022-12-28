@@ -8,6 +8,7 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IRewardsOnlyGauge.sol";
+import "./interfaces/IVeloRouter.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
@@ -18,6 +19,7 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     // 3rd-party contract addresses
     IBeetVault public constant BEET_VAULT = IBeetVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
+    address public constant VELODROME_ROUTER = address(0xa132DAB612dB5cB9fC9Ac426A0Cc215A3423F9c9);
 
     /**
      * @dev Tokens Used:
@@ -30,17 +32,16 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
-    IERC20Upgradeable public constant OP_LINEAR = IERC20Upgradeable(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
-    IERC20Upgradeable public constant USD_STABLE = IERC20Upgradeable(0x6222ae1d2a9f6894dA50aA25Cb7b303497f9BEbd);
+    address public constant OP_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
+    address public constant SONNE_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
     IERC20Upgradeable public want;
     IAsset[] public underlyings;
 
     // pools used to swap tokens
-    bytes32 public constant OP_LINEAR_POOL = 0xa4e597c1bd01859b393b124ce18427aa4426a87100000000000000000000004c;
     bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
-    bytes32 public constant STEADY_BEETS_BOOSTED = 0x6222ae1d2a9f6894da50aa25cb7b303497f9bebd000000000000000000000046;
+
 
     /**
      * @dev Strategy variables
