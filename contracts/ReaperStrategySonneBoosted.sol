@@ -129,10 +129,10 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
         // OP and SONNE -> USDC using velo
         _swap(address(OP), address(USDC), OP.balanceOf(address(this)));
-        _swap(address(SONNE), address(USDC), OP.balanceOf(address(this)));
+        _swap(address(SONNE), address(USDC), SONNE.balanceOf(address(this)));
 
-        uint256 totalFee = (USDC_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        uint256 amountAfterFees = USDC_LINEAR.balanceOf(address(this)) - totalFee;
+        uint256 totalFee = (USDC.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        uint256 amountAfterFees = USDC.balanceOf(address(this)) - totalFee;
         // convert amountAfterFees of USDC to USD_LINEAR
         _beethovenSwap(
             USDC,
@@ -143,7 +143,6 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
         uint256 usdcLinBal = USDC_LINEAR.balanceOf(address(this));
 
-        // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
         _beethovenSwap(USDC_LINEAR, want, usdcLinBal, beetsPoolId);
 
         uint256 usdcFee = USDC.balanceOf(address(this));
