@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: agpl-3.0
+// SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.0;
 
@@ -40,7 +40,6 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
     // pools used to swap tokens
     bytes32 public constant USDC_LINEAR_POOL = 0xedcfaf390906a8f91fb35b7bac23f3111dbaee1c00000000000000000000007c;
 
-
     /**
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
@@ -62,13 +61,16 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
         address[] memory _multisigRoles,
         IERC20Upgradeable _want,
         IRewardsOnlyGauge _gauge
-    ) public initializer {
+    )
+        public
+        initializer
+    {
         __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles);
         want = _want;
         gauge = _gauge;
         beetsPoolId = IBasePool(address(want)).getPoolId();
 
-        (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
+        (IERC20Upgradeable[] memory tokens,,) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
             if (address(tokens[i]) == address(USDC_LINEAR)) {
                 usdcLinearPosition = i;
@@ -80,7 +82,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Function that puts the funds to work.
-     *      It gets called whenever someone deposits in the strategy's vault contract.
+     * It gets called whenever someone deposits in the strategy's vault contract.
      */
     function _deposit() internal override {
         uint256 wantBalance = want.balanceOf(address(this));
@@ -104,9 +106,9 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {OP} from gauge.
-     *      2. Swaps all {OP} and charges fee.
-     *      3. Re-deposits.
+     * 1. Claims {OP} from gauge.
+     * 2. Swaps all {OP} and charges fee.
+     * 3. Re-deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
         _claimRewards();
@@ -116,7 +118,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core harvest function.
-     *      Claims rewards from gauge.
+     * Claims rewards from gauge.
      */
     function _claimRewards() internal {
         gauge.claim_rewards(address(this));
@@ -124,7 +126,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of {OP} gained from reward.
+     * Charges fees based on the amount of {OP} gained from reward.
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
         // OP and SONNE -> USDC using velo
@@ -134,12 +136,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
         uint256 totalFee = (USDC.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
         uint256 amountAfterFees = USDC.balanceOf(address(this)) - totalFee;
         // convert amountAfterFees of USDC to USD_LINEAR
-        _beethovenSwap(
-            USDC,
-            USDC_LINEAR,
-            amountAfterFees,
-            USDC_LINEAR_POOL
-        );
+        _beethovenSwap(USDC, USDC_LINEAR, amountAfterFees, USDC_LINEAR_POOL);
 
         uint256 usdcLinBal = USDC_LINEAR.balanceOf(address(this));
 
@@ -155,36 +152,8 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
         }
     }
 
-    /**
-     * @dev Core harvest function.
-     *      Converts reward tokens to want
-     */
-    function _addLiquidity() internal {
-        // remaining USDC_LINEAR used to join pool
-        uint256 usdcLinearBal = USDC_LINEAR.balanceOf(address(this));
-        if (usdcLinearBal != 0) {
-            IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
-            uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[usdcLinearPosition] = usdcLinearBal;
-            uint256 minAmountOut = 1;
-            bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
-
-            IBeetVault.JoinPoolRequest memory request;
-            request.assets = underlyings;
-            request.maxAmountsIn = amountsIn;
-            request.userData = userData;
-            request.fromInternalBalance = false;
-
-            BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
-        }
-    }
-
     /// @dev Helper function to swap {_from} to {_to} given an {_amount}. ONLY VOL
-    function _swap(
-        address _from,
-        address _to,
-        uint256 _amount
-    ) internal {
+    function _swap(address _from, address _to, uint256 _amount) internal {
         if (_from == _to || _amount == 0) {
             return;
         }
@@ -199,14 +168,11 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core harvest function. Swaps {_amount} of {_from} to {_to} using {_poolId}.
-     *      Prior to requesting the swap, allowance is increased if necessary.
+     * Prior to requesting the swap, allowance is increased if necessary.
      */
-    function _beethovenSwap(
-        IERC20Upgradeable _from,
-        IERC20Upgradeable _to,
-        uint256 _amount,
-        bytes32 _poolId
-    ) internal {
+    function _beethovenSwap(IERC20Upgradeable _from, IERC20Upgradeable _to, uint256 _amount, bytes32 _poolId)
+        internal
+    {
         if (_from == _to || _amount == 0) {
             return;
         }
@@ -234,7 +200,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
     /**
      * @dev Function to calculate the total {want} held by the strat.
-     *      It takes into account both the funds in hand, plus the funds in the MasterChef.
+     * It takes into account both the funds in hand, plus the funds in the MasterChef.
      */
     function balanceOf() public view override returns (uint256) {
         return want.balanceOf(address(this)) + gauge.balanceOf(address(this));

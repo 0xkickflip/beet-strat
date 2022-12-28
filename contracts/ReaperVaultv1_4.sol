@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: MIT
+// SPDX-License-Identifier: BUSL-1.1
 
 pragma solidity ^0.8.0;
 
@@ -77,13 +77,9 @@ contract ReaperVaultv1_4 is ERC20, Ownable, ReentrancyGuard {
      * @param _depositFee one-time fee taken from deposits to this vault (in basis points)
      * @param _tvlCap initial deposit cap for scaling TVL safely
      */
-    constructor(
-        address _token,
-        string memory _name,
-        string memory _symbol,
-        uint256 _depositFee,
-        uint256 _tvlCap
-    ) ERC20(string(_name), string(_symbol)) {
+    constructor(address _token, string memory _name, string memory _symbol, uint256 _depositFee, uint256 _tvlCap)
+        ERC20(string(_name), string(_symbol))
+    {
         token = IERC20(_token);
         constructionTime = block.timestamp;
         depositFee = _depositFee;
