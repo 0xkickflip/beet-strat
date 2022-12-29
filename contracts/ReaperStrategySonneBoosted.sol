@@ -44,11 +44,9 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {usdcLinearPosition} - Index of {USDC_LINEAR} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public usdcLinearPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -72,10 +70,6 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens,,) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(USDC_LINEAR)) {
-                usdcLinearPosition = i;
-            }
-
             underlyings.push(IAsset(address(tokens[i])));
         }
     }
@@ -133,8 +127,8 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
         _swap(address(OP), address(USDC), OP.balanceOf(address(this)));
         _swap(address(SONNE), address(USDC), SONNE.balanceOf(address(this)));
 
-        uint256 totalFee = (USDC.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
-        uint256 amountAfterFees = USDC.balanceOf(address(this)) - totalFee;
+        uint256 usdcFee = (USDC.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        uint256 amountAfterFees = USDC.balanceOf(address(this)) - usdcFee;
         // convert amountAfterFees of USDC to USD_LINEAR
         _beethovenSwap(USDC, USDC_LINEAR, amountAfterFees, USDC_LINEAR_POOL);
 
@@ -142,7 +136,7 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
         _beethovenSwap(USDC_LINEAR, want, usdcLinBal, beetsPoolId);
 
-        uint256 usdcFee = USDC.balanceOf(address(this));
+        usdcFee = USDC.balanceOf(address(this));
         if (usdcFee != 0) {
             callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
