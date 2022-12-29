@@ -2,7 +2,7 @@ async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
   const wantAddress = '0x428E1CC3099cF461B87D124957A0d48273f334b1';
-  const tokenName = 'Here Comes the Sonne Beethoven-X Vault';
+  const tokenName = 'Here comes the Sonne Beethoven-X Vault';
   const tokenSymbol = 'rf-bb-soUSD';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
