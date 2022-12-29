@@ -28,14 +28,12 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
      * {USDC} - Used to charge fees
      * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make {USDC}.
      * {want} - LP token for the Beethoven-x pool.
-     * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
     IERC20Upgradeable public constant SONNE = IERC20Upgradeable(0x1DB2466d9F5e10D7090E7152B68d62703a2245F0);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
     IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xEdcfaF390906a8f91fb35B7bAC23f3111dBaEe1C);
     IERC20Upgradeable public want;
-    IAsset[] public underlyings;
 
     // pools used to swap tokens
     bytes32 public constant USDC_LINEAR_POOL = 0xedcfaf390906a8f91fb35b7bac23f3111dbaee1c00000000000000000000007c;
@@ -67,11 +65,6 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
         want = _want;
         gauge = _gauge;
         beetsPoolId = IBasePool(address(want)).getPoolId();
-
-        (IERC20Upgradeable[] memory tokens,,) = BEET_VAULT.getPoolTokens(beetsPoolId);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            underlyings.push(IAsset(address(tokens[i])));
-        }
     }
 
     /**
@@ -136,7 +129,6 @@ contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
 
         _beethovenSwap(USDC_LINEAR, want, usdcLinBal, beetsPoolId);
 
-        usdcFee = USDC.balanceOf(address(this));
         if (usdcFee != 0) {
             callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
             uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
