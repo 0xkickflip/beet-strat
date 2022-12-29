@@ -12,7 +12,7 @@ import "./interfaces/IVeloRouter.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the Happy Road Reloaded pool.
+ * @dev LP compounding strategy for the Sonne USD Boosted pool.
  */
 contract ReaperStrategySonneBoosted is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;

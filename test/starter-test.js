@@ -33,7 +33,7 @@ const wantAddress = '0x428E1CC3099cF461B87D124957A0d48273f334b1';
 const gauge = '0x2d801513d36aA8aA2579133507462f0DE05a40Ff';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 
-const wantHolderAddr = '0x052463c5b558F273B69F5d831603A815aE4eea41';
+const wantHolderAddr = '0x15c6BA6804Cd8d0Ea0afca7a2B976aCa877434fB';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -44,6 +44,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://late-fragrant-rain.optimism.quiknode.pro/70171d2e7790f3af6a833f808abe5e85ed6bd881/',
+            blockNumber: 57358200,
           },
         },
       ],
