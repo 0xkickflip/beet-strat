@@ -1,9 +1,9 @@
 async function main() {
   const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
 
-  const wantAddress = '0xB0de49429fBb80c635432bbAD0B3965b28560177';
-  const tokenName = 'Happy Road Reloaded Beethoven-X Vault';
-  const tokenSymbol = 'rf-bb-HAPPY';
+  const wantAddress = '0x428E1CC3099cF461B87D124957A0d48273f334b1';
+  const tokenName = 'Here Comes the Sonne Beethoven-X Vault';
+  const tokenSymbol = 'rf-bb-soUSD';
   const depositFee = 0;
   const tvlCap = ethers.constants.MaxUint256;
 

@@ -2,7 +2,7 @@ const hre = require('hardhat');
 
 async function main() {
   const vaultAddress = '0x7e66050192E5D74f311DEf92471394A2232a90f9';
-  const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoadReloaded');
+  const Strategy = await ethers.getContractFactory('ReaperStrategySonneBoosted');
 
   const treasuryAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
 
@@ -15,8 +15,8 @@ async function main() {
   const admin = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
   const guardian = '0xb0C9D5851deF8A2Aac4A23031CA2610f8C3483F9';
   
-  const want = '0xB0de49429fBb80c635432bbAD0B3965b28560177';
-  const gauge = '0x3CE5dD8D3C2DF2bb599A94523509004d2af17516';
+  const want = '0x428E1CC3099cF461B87D124957A0d48273f334b1';
+  const gauge = '0x2d801513d36aA8aA2579133507462f0DE05a40Ff';
 
   const strategy = await hre.upgrades.deployProxy(
     Strategy,
