@@ -44,7 +44,7 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://late-fragrant-rain.optimism.quiknode.pro/70171d2e7790f3af6a833f808abe5e85ed6bd881/',
-            blockNumber: 57358200,
+            blockNumber: 57371177 ,
           },
         },
       ],
@@ -343,7 +343,7 @@ describe('Vaults', function () {
 
     it('should provide yield', async function () {
       const {vault, strategy, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
-      const timeToSkip = 3600;
+      const timeToSkip = 7200;
 
       await vault.connect(wantHolder).depositAll();
       const initialVaultBalance = await vault.balance();
