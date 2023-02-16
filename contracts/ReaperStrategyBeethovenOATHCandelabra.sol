@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 /**
  * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
  */
-contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
+contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3_1 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -51,7 +51,7 @@ contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
      * {oathPosition} - Index of {WFTM} in the Beethoven-X pool
      */
     uint256 public mcPoolId; //101
-    bytes32 public beetsPoolId; 
+    bytes32 public beetsPoolId;
     uint256 public oathPosition;
 
     /**
@@ -63,10 +63,11 @@ contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
         address _treasury,
         address[] memory _strategists,
         address[] memory _multisigRoles,
+        address[] memory _keepers,
         address _want,
         uint256 _mcPoolId
     ) public initializer {
-        __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles);
+        __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles, _keepers);
         want = IERC20Upgradeable(_want);
         mcPoolId = _mcPoolId;
         beetsPoolId = IBasePool(address(want)).getPoolId();
@@ -88,6 +89,7 @@ contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
     function _deposit() internal override {
         uint256 wantBalance = IERC20Upgradeable(want).balanceOf(address(this));
         if (wantBalance != 0) {
+            IERC20Upgradeable(want).safeIncreaseAllowance(MASTER_CHEF, wantBalance);
             IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
         }
     }
@@ -112,7 +114,7 @@ contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
      *      4. Joins {beetsPoolId} using remaining {WFTM}.
      *      5. Deposits.
      */
-    function _harvestCore() internal override returns (uint256 callerFee){
+    function _harvestCore() internal override returns (uint256 callerFee) {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         _swapBeetsToOATH();
         callerFee = _chargeFees();
@@ -170,17 +172,14 @@ contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
      * @dev Core harvest function.
      *      Charges fees based on the amount of WETH gained from reward
      */
-    function _chargeFees() internal returns (uint256 callerFee) {
+    function _chargeFees() internal returns (uint256 usdcFee) {
         uint256 usdcBalBefore = USDC.balanceOf(address(this));
         uint256 OATHFee = (OATH.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
 
         if (OATHFee != 0) {
             _swapOATHToUsdc(OATHFee);
-            uint256 usdcFee = USDC.balanceOf(address(this)) - usdcBalBefore;
-            callerFee = (usdcFee * callFee) / PERCENT_DIVISOR;
-
-            USDC.safeTransfer(msg.sender, callerFee);
-            USDC.safeTransfer(treasury, usdcFee - callerFee);
+            usdcFee = USDC.balanceOf(address(this)) - usdcBalBefore;
+            USDC.safeTransfer(treasury, usdcFee);
         }
     }
 
