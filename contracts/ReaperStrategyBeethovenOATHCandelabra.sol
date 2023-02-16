@@ -15,7 +15,7 @@ import "@openzeppelin/contracts-upgradeable/utils/math/MathUpgradeable.sol";
 /**
  * @dev LP compounding strategy for Beethoven-X pools that have WFTM as one of the tokens.
  */
-contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
+contract ReaperStrategyBeethovenOATHCandelabra is ReaperBaseStrategyv3{
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -31,25 +31,28 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant BEETS = IERC20Upgradeable(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    IERC20Upgradeable public constant OATH = IERC20Upgradeable(0x21Ada0D2aC28C3A5Fa3cD2eE30882dA8812279B6);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x04068DA6C83AFCFA0e13ba15A6696662335D5B75);
     IERC20Upgradeable public constant WETH = IERC20Upgradeable(0x74b23882a30290451A17c44f4F05243b6b58C76d);
     IERC20Upgradeable public want;
     IAsset[] underlyings;
 
     // pools used to swap tokens
-    bytes32 public constant DANTE_SYMPHONY = 0xc042ef6ca08576bdfb57d3055a7654344fd153e400010000000000000000003a; // wftm, wbtc, WETH, wsta, BEETS
-    bytes32 public constant A_LATE_QUARTET = 0xf3a602d30dcb723a74a0198313a7551feaca7dac00010000000000000000005f; // USDC, wftm, wbtc, WETH
+    bytes32 public constant BEET_MASONS_OATH = 0x644dd9c08e1848cae0ddf892686a642acefc9ccf0002000000000000000002d0; // BEETS, OATH
 
+    bytes32 public constant OATH_CANDELABRA = 0x3ceee030ce94a87e18e2aa251435acd96ca6819a000100000000000000000636; // USDC, WFTM, OATH
+
+    bytes32 public constant SYMPHONY_10 = 0x03c6b3f09d2504606936b1a4decefad204687890000200000000000000000015; // USDC, BEETS
 
     /**
      * @dev Strategy variables
      * {mcPoolId} - ID of MasterChef pool in which to deposit LP tokens
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {wethPosition} - Index of {WFTM} in the Beethoven-X pool
+     * {oathPosition} - Index of {WFTM} in the Beethoven-X pool
      */
-    uint256 public mcPoolId;
-    bytes32 public beetsPoolId;
-    uint256 public wethPosition;
+    uint256 public mcPoolId; //101
+    bytes32 public beetsPoolId; 
+    uint256 public oathPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -70,8 +73,8 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
 
         (IERC20Upgradeable[] memory tokens, , ) = IBeetVault(BEET_VAULT).getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(WETH)) {
-                wethPosition = i;
+            if (address(tokens[i]) == address(OATH)) {
+                oathPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -111,7 +114,7 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
      */
     function _harvestCore() internal override returns (uint256 callerFee){
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
-        _swapBeetsToWeth();
+        _swapBeetsToOATH();
         callerFee = _chargeFees();
         _joinPool();
         deposit();
@@ -120,17 +123,17 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
     /**
      * @dev Core harvest function. Swaps {BEETS} to {WETH} using {DANTE_SYMPHONY}.
      */
-    function _swapBeetsToWeth() internal {
+    function _swapBeetsToOATH() internal {
         uint256 beetsBal = IERC20Upgradeable(BEETS).balanceOf(address(this));
         if (beetsBal == 0) {
             return;
         }
 
         IBeetVault.SingleSwap memory singleSwap;
-        singleSwap.poolId = DANTE_SYMPHONY;
+        singleSwap.poolId = BEET_MASONS_OATH;
         singleSwap.kind = IBeetVault.SwapKind.GIVEN_IN;
         singleSwap.assetIn = IAsset(address(BEETS));
-        singleSwap.assetOut = IAsset(address(WETH));
+        singleSwap.assetOut = IAsset(address(OATH));
         singleSwap.amount = beetsBal;
         singleSwap.userData = abi.encode(0);
 
@@ -144,13 +147,13 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
         IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
     }
 
-    function _swapWethToUsdc(uint256 _wethAmount) internal {
+    function _swapOATHToUsdc(uint256 _oathAmount) internal {
         IBeetVault.SingleSwap memory singleSwap;
-        singleSwap.poolId = A_LATE_QUARTET;
+        singleSwap.poolId = OATH_CANDELABRA;
         singleSwap.kind = IBeetVault.SwapKind.GIVEN_IN;
-        singleSwap.assetIn = IAsset(address(WETH));
+        singleSwap.assetIn = IAsset(address(OATH));
         singleSwap.assetOut = IAsset(address(USDC));
-        singleSwap.amount = _wethAmount;
+        singleSwap.amount = _oathAmount;
         singleSwap.userData = abi.encode(0);
 
         IBeetVault.FundManagement memory funds;
@@ -159,7 +162,7 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
         funds.recipient = payable(address(this));
         funds.toInternalBalance = false;
 
-        WETH.safeIncreaseAllowance(BEET_VAULT, _wethAmount);
+        OATH.safeIncreaseAllowance(BEET_VAULT, _oathAmount);
         IBeetVault(BEET_VAULT).swap(singleSwap, funds, 1, block.timestamp);
     }
 
@@ -169,10 +172,10 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
      */
     function _chargeFees() internal returns (uint256 callerFee) {
         uint256 usdcBalBefore = USDC.balanceOf(address(this));
-        uint256 wethFee = (WETH.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
+        uint256 OATHFee = (OATH.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR;
 
-        if (wethFee != 0) {
-            _swapWethToUsdc(wethFee);
+        if (OATHFee != 0) {
+            _swapOATHToUsdc(OATHFee);
             uint256 usdcFee = USDC.balanceOf(address(this)) - usdcBalBefore;
             callerFee = (usdcFee * callFee) / PERCENT_DIVISOR;
 
@@ -185,14 +188,14 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
      * @dev Core harvest function. Joins {beetsPoolId} using {WETH} balance;
      */
     function _joinPool() internal {
-        uint256 wethBal = WETH.balanceOf(address(this));
-        if (wethBal == 0) {
+        uint256 oathBal = OATH.balanceOf(address(this));
+        if (oathBal == 0) {
             return;
         }
 
         IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
         uint256[] memory amountsIn = new uint256[](underlyings.length);
-        amountsIn[wethPosition] = wethBal;
+        amountsIn[oathPosition] = oathBal;
         uint256 minAmountOut = 1;
         bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -202,7 +205,7 @@ contract ReaperStrategyBeethovenSpotieOatie is ReaperBaseStrategyv3{
         request.userData = userData;
         request.fromInternalBalance = false;
 
-        WETH.safeIncreaseAllowance(BEET_VAULT, wethBal);
+        OATH.safeIncreaseAllowance(BEET_VAULT, oathBal);
         IBeetVault(BEET_VAULT).joinPool(beetsPoolId, address(this), address(this), request);
     }
 
