@@ -3,10 +3,10 @@
 pragma solidity ^0.8.0;
 
 import "./interfaces/IStrategy.sol";
-import "oz-contracts/access/Ownable.sol";
-import "oz-contracts/security/ReentrancyGuard.sol";
-import "oz-contracts/token/ERC20/ERC20.sol";
-import "oz-contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
  * @dev Implementation of a vault to deposit funds for yield optimizing.

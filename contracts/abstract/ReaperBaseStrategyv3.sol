@@ -4,11 +4,11 @@ pragma solidity ^0.8.0;
 
 import "../interfaces/IStrategy.sol";
 import "../interfaces/IVault.sol";
-import "oz-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
-import "oz-upgradeable/proxy/utils/Initializable.sol";
-import "oz-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "oz-upgradeable/security/PausableUpgradeable.sol";
-import "oz-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/structs/EnumerableSetUpgradeable.sol";
 
 abstract contract ReaperBaseStrategyv3_1 is
     IStrategy,
