@@ -7,8 +7,7 @@ import "./interfaces/IAsset.sol";
 import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
-import "./interfaces/IRewardsOnlyGauge.sol";
-import "./interfaces/IVeloRouter.sol";
+import "./interfaces/IMasterChef.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
@@ -18,30 +17,35 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
-    IBeetVault public constant BEET_VAULT = IBeetVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-    address public constant VELODROME_ROUTER = address(0xa132DAB612dB5cB9fC9Ac426A0Cc215A3423F9c9);
-
+    IBeetVault public constant BEET_VAULT = IBeetVault(0x20dd72Ed959b6147912C2e529F0a0C651c33c9ce);
+   
     /**
      * @dev Tokens Used:
-     * {OP} - Reward token for staking LP into gauge.
-     * {OP_LINEAR} - OP Linear pool, used as intermediary token to swap {OP} to {USDC}.
-     * {USD_STABLE} - USD Composable stable pool.
-     * {USDC} - Used to charge fees
-     * {USDC_LINEAR} - USDC Linear pool, used as intermediary token to make {USDC}.
+     * {WFTM} - Pool token.
+     * {axlBTC} - Pool token.
+     * {ERN} - Pool token.
+     * {axlETH} - Pool token.
+     * {BEETS} - Emissions token.
+     * {OATH} - Emissions token.
+     * {axlUSDC} - Emissions token.
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
-    IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
-    address public constant OP_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
-    address public constant SONNE_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
-    IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
-    IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
+    IERC20Upgradeable public constant WFTM = IERC20Upgradeable(0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83);
+    IERC20Upgradeable public constant axlBTC = IERC20Upgradeable(0x448d59B4302aB5d2dadf9611bED9457491926c8e);
+    IERC20Upgradeable public constant ERN = IERC20Upgradeable(0xce1E3cc1950D2aAEb47dE04DE2dec2Dc86380E0A);
+    IERC20Upgradeable public constant axlETH = IERC20Upgradeable(0xfe7eDa5F2c56160d406869A8aA4B2F365d544C7B);
+    IERC20Upgradeable public constant BEETS = IERC20Upgradeable(0xF24Bcf4d1e507740041C9cFd2DddB29585aDCe1e);
+    IERC20Upgradeable public constant OATH = IERC20Upgradeable(0x21Ada0D2aC28C3A5Fa3cD2eE30882dA8812279B6);
+    IERC20Upgradeable public constant axlUSDC = IERC20Upgradeable(0x1B6382DBDEa11d97f24495C9A90b7c88469134a4);
     IERC20Upgradeable public want;
     IAsset[] public underlyings;
 
     // pools used to swap tokens
-    bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
-
+    bytes32 public constant BEET_MASONS_OATH = 0x644dd9c08e1848cae0ddf892686a642acefc9ccf0002000000000000000002d0;
+    bytes32 public constant FRESH_BEETS = 0x9e4341acef4147196e99d648c5e43b3fc9d026780002000000000000000005ec;
+    bytes32 public constant A_STABLE_CHORD = 0x4e87cc8043ef97a21282e72ab172722634fc2127000000000000000000000766;
+    address public constant MASTER_CHEF = address(0x8166994d9ebBe5829EC86Bd81258149B87faCfd3);
 
     /**
      * @dev Strategy variables
@@ -49,9 +53,9 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
      * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
      */
-    IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public opLinearPosition;
+    uint256 public wftmPosition;
+    uint256 public mcPoolId;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -63,17 +67,17 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
         address[] memory _strategists,
         address[] memory _multisigRoles,
         IERC20Upgradeable _want,
-        IRewardsOnlyGauge _gauge
+        uint256 _mcPoolId
     ) public initializer {
         __ReaperBaseStrategy_init(_vault, _treasury, _strategists, _multisigRoles);
         want = _want;
-        gauge = _gauge;
+        mcPoolId = _mcPoolId;
         beetsPoolId = IBasePool(address(want)).getPoolId();
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(OP_LINEAR)) {
-                opLinearPosition = i;
+            if (address(tokens[i]) == address(WFTM)) {
+                wftmPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -87,9 +91,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     function _deposit() internal override {
         uint256 wantBalance = want.balanceOf(address(this));
         if (wantBalance != 0) {
-            want.safeIncreaseAllowance(address(gauge), wantBalance);
-            gauge.deposit(wantBalance);
-        }
+            want.safeIncreaseAllowance(MASTER_CHEF, wantBalance);
+            IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));        }
     }
 
     /**
@@ -98,7 +101,7 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
     function _withdraw(uint256 _amount) internal override {
         uint256 wantBal = want.balanceOf(address(this));
         if (wantBal < _amount) {
-            gauge.withdraw(_amount - wantBal);
+            IMasterChef(MASTER_CHEF).withdrawAndHarvest(mcPoolId, _amount - wantBal, address(this));
         }
 
         want.safeTransfer(vault, _amount);
@@ -111,18 +114,10 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      3. Re-deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
-        _claimRewards();
+        IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         callerFee = _performSwapsAndChargeFees();
         _addLiquidity();
         deposit();
-    }
-
-    /**
-     * @dev Core harvest function.
-     *      Claims rewards from gauge.
-     */
-    function _claimRewards() internal {
-        gauge.claim_rewards(address(this));
     }
 
     /**
@@ -131,32 +126,16 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
         // OP -> OP_LINEAR using OP_LINEAR_POOL
-        _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
+        _beethovenSwap(BEETS, WFTM, BEETS.balanceOf(address(this)), FRESH_BEETS);
+        _beethovenSwap(OATH, WFTM, OATH.balanceOf(address(this)), BEET_MASONS_OATH);
+        _beethovenSwap(axlUSDC, ERN, axlUSDC.balanceOf(address(this)), A_STABLE_CHORD);
+        _beethovenSwap(ERN, WFTM, ERN.balanceOf(address(this)), beetsPoolId);
 
-        // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
-        _beethovenSwap(
-            OP_LINEAR,
-            USD_STABLE,
-            (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            beetsPoolId
-        );
-
-        uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
-        if (usdStableFee != 0) {
-            // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
-            _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
-
-            // USDC_LINEAR -> USDC using USDC_LINEAR_POOL
-            _beethovenSwap(USDC_LINEAR, USDC, USDC_LINEAR.balanceOf(address(this)), USDC_LINEAR_POOL);
-
-            uint256 usdcFee = USDC.balanceOf(address(this));
-            if (usdcFee != 0) {
-                callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
-                uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
-
-                USDC.safeTransfer(msg.sender, callFeeToUser);
-                USDC.safeTransfer(treasury, treasuryFeeToVault);
-            }
+        uint256 wftmBal = WFTM.balanceOf(address(this));
+        if (wftmBal != 0) {
+            // callFeeToUser = 0;
+            uint256 wftmFee = (wftmBal * totalFee) / PERCENT_DIVISOR;
+            WFTM.safeTransfer(treasury, wftmFee);
         }
     }
 
@@ -166,11 +145,11 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      */
     function _addLiquidity() internal {
         // remaining OP_LINEAR used to join pool
-        uint256 opLinearBal = OP_LINEAR.balanceOf(address(this));
-        if (opLinearBal != 0) {
+        uint256 wftmBal = WFTM.balanceOf(address(this));
+        if (wftmBal != 0) {
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
             uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[opLinearPosition] = opLinearBal;
+            amountsIn[wftmPosition] = wftmBal;
             uint256 minAmountOut = 1;
             bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
@@ -219,18 +198,19 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
         BEET_VAULT.swap(singleSwap, funds, 1, block.timestamp);
     }
 
-    /**
+     /**
      * @dev Function to calculate the total {want} held by the strat.
      *      It takes into account both the funds in hand, plus the funds in the MasterChef.
      */
     function balanceOf() public view override returns (uint256) {
-        return want.balanceOf(address(this)) + gauge.balanceOf(address(this));
+        (uint256 amount, ) = IMasterChef(MASTER_CHEF).userInfo(mcPoolId, address(this));
+        return amount + IERC20Upgradeable(want).balanceOf(address(this));
     }
 
     /**
      * Withdraws all funds leaving rewards behind.
      */
     function _reclaimWant() internal override {
-        gauge.withdraw(gauge.balanceOf(address(this)));
+        IMasterChef(MASTER_CHEF).emergencyWithdraw(mcPoolId, address(this));
     }
 }

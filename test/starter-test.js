@@ -12,28 +12,27 @@ const moveBlocksForward = async (blocks) => {
   mine(blocks);
 };
 
-const toWantUnit = (num, isUSDC = false) => {
-  if (isUSDC) {
+const toWantUnit = (num, isWFTM = false) => {
+  if (isWFTM) {
     return ethers.BigNumber.from(num * 10 ** 8);
   }
   return ethers.utils.parseEther(num);
 };
 
-const treasuryAddr = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
-
-const superAdminAddress = '0x9BC776dBb134Ef9D7014dB1823Cd755Ac5015203';
-const adminAddress = '0xeb9C9b785aA7818B2EBC8f9842926c4B9f707e4B';
-const guardianAddress = '0xb0C9D5851deF8A2Aac4A23031CA2610f8C3483F9';
+const treasuryAddr = "0x0e7c5313E9BB80b654734d9b7aB1FB01468deE3b";
+const superAdminAddress = "0x04C710a1E8a738CDf7cAD3a52Ba77A784C35d8CE";
+const adminAddress = "0x539eF36C804e4D735d8cAb69e8e441c12d4B88E0";
+const guardianAddress = "0xf20E25f2AB644C8ecBFc992a6829478a85A98F2c";
 const strategistAddr = '0x1A20D7A31e5B3Bc5f02c8A146EF6f394502a10c4';
 
 const strategists = [strategistAddr];
 const multisigRoles = [superAdminAddress, adminAddress, guardianAddress];
 
-const wantAddress = '0xB0de49429fBb80c635432bbAD0B3965b28560177';
-const gauge = '0x3CE5dD8D3C2DF2bb599A94523509004d2af17516';
-const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
+const wantAddress = '0x7005Fec9F7e07a60289539B1856807273fF114Ac';
+const wftmAddress = '0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83';
+const mcPoolId = 133;
 
-const wantHolderAddr = '0x3b410908e71Ee04e7dE2a87f8F9003AFe6c1c7cE';
+const wantHolderAddr = '0x4c3490df15edfa178333445ce568ec6d99b5d71c';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -43,7 +42,7 @@ describe('Vaults', function () {
       params: [
         {
           forking: {
-            jsonRpcUrl: 'https://late-fragrant-rain.optimism.quiknode.pro/70171d2e7790f3af6a833f808abe5e85ed6bd881/',
+            jsonRpcUrl: 'https://rpc.ftm.tools/',
           },
         },
       ],
@@ -56,6 +55,13 @@ describe('Vaults', function () {
     const guardian = await ethers.getImpersonatedSigner(guardianAddress);
     const admin = await ethers.getImpersonatedSigner(adminAddress);
     const superAdmin = await ethers.getImpersonatedSigner(superAdminAddress);
+    const ftmWhale = await ethers.getImpersonatedSigner("0x41Cc8B8c6b20A7d51668A163A0aBeF1202B76C34");
+
+    let tx = await ftmWhale.sendTransaction({
+      to: owner,
+      value: ethers.utils.parseEther('100.0'),
+    });
+    await tx.wait();
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
@@ -73,17 +79,17 @@ describe('Vaults', function () {
         strategists,
         multisigRoles,
         wantAddress,
-        gauge,
+        mcPoolId,
       ],
       {kind: 'uups'},
     );
     await strategy.deployed();
     await vault.initialize(strategy.address);
     const want = await Want.attach(wantAddress);
-    const usdc = await Want.attach(usdcAddress);
+    const wftm = await Want.attach(wftmAddress);
 
     // send some funds to wantHolder and strategist
-    let tx = await owner.sendTransaction({
+    tx = await owner.sendTransaction({
       to: wantHolderAddr,
       value: ethers.utils.parseEther('1.0'),
     });
@@ -98,7 +104,7 @@ describe('Vaults', function () {
     await want.connect(wantHolder).approve(vault.address, ethers.constants.MaxUint256);
     await want.connect(owner).approve(vault.address, ethers.constants.MaxUint256);
 
-    return {vault, strategy, want, usdc, owner, wantHolder, strategist, guardian, admin, superAdmin, unassignedRole};
+    return {vault, strategy, want, wftm, owner, wantHolder, strategist, guardian, admin, superAdmin, unassignedRole};
   }
 
   describe('Deploying the vault and strategy', function () {
@@ -326,18 +332,18 @@ describe('Vaults', function () {
     });
 
     it('should be able to harvest', async function () {
-      const {vault, strategy, usdc, wantHolder, owner} = await loadFixture(deployVaultAndStrategyAndGetSigners);
+      const {vault, strategy, wftm, wantHolder, owner} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       await vault.connect(wantHolder).depositAll();
       await moveTimeForward(7200);
       const readOnlyStrat = await strategy.connect(ethers.provider);
       const predictedCallerFee = await readOnlyStrat.callStatic.harvest();
       console.log(`predicted caller fee ${ethers.utils.formatEther(predictedCallerFee)}`);
 
-      const usdcBalBefore = await usdc.balanceOf(owner.address);
+      const wftmBalBefore = await wftm.balanceOf(owner.address);
       await strategy.harvest();
-      const usdcBalAfter = await usdc.balanceOf(owner.address);
-      const usdcBalDifference = usdcBalAfter.sub(usdcBalBefore);
-      console.log(`actual caller fee ${ethers.utils.formatEther(usdcBalDifference)}`);
+      const wftmBalAfter = await wftm.balanceOf(owner.address);
+      const wftmBalDifference = wftmBalAfter.sub(wftmBalBefore);
+      console.log(`actual caller fee ${ethers.utils.formatEther(wftmBalDifference)}`);
     });
 
     it('should provide yield', async function () {
