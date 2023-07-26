@@ -8,7 +8,7 @@
     },
     {
       "address": "0x4b6aB5F819A515382B0dEB6935D793817bB4af28",
-      "txHash": "0xed36f4c91779a2b3efd592fafb47350482fdf035cddfab7cf54da934dc6d9484",
+      "txHash": "0x26b2e802cdd16c956490daf73f15ddc6f10935a21dd8b5383c5a3b2c4eded175",
       "kind": "uups"
     }
   ],
@@ -384,7 +384,7 @@
     },
     "4c667424201684fa06d3787d15ed5d242c9eb8ded32d5f08b2b212669e60db8b": {
       "address": "0x18E317A7D70d8fBf8e6E893616b52390EbBdb629",
-      "txHash": "0xd2a0a8068894b67899ba414219fedc87a349fd65eeb7c916f3d40ab3257dfeb4",
+      "txHash": "0x884cea940e195bd4944b2f44def2a2a4dc69b1292fce32aa32228206208b9c57",
       "layout": {
         "storage": [
           {
@@ -577,40 +577,40 @@
             "offset": 0,
             "slot": "362",
             "type": "t_contract(IERC20Upgradeable)2074",
-            "contract": "ReaperStrategyHappyRoadReloaded",
-            "src": "contracts\\ReaperStrategyHappyRoadReloaded.sol:41"
+            "contract": "ReaperStrategyOdeToDefi",
+            "src": "contracts\\ReaperStrategyOdeToDefi.sol:41"
           },
           {
             "label": "underlyings",
             "offset": 0,
             "slot": "363",
             "type": "t_array(t_contract(IAsset)7662)dyn_storage",
-            "contract": "ReaperStrategyHappyRoadReloaded",
-            "src": "contracts\\ReaperStrategyHappyRoadReloaded.sol:42"
+            "contract": "ReaperStrategyOdeToDefi",
+            "src": "contracts\\ReaperStrategyOdeToDefi.sol:42"
           },
           {
             "label": "beetsPoolId",
             "offset": 0,
             "slot": "364",
             "type": "t_bytes32",
-            "contract": "ReaperStrategyHappyRoadReloaded",
-            "src": "contracts\\ReaperStrategyHappyRoadReloaded.sol:56"
+            "contract": "ReaperStrategyOdeToDefi",
+            "src": "contracts\\ReaperStrategyOdeToDefi.sol:56"
           },
           {
             "label": "wftmPosition",
             "offset": 0,
             "slot": "365",
             "type": "t_uint256",
-            "contract": "ReaperStrategyHappyRoadReloaded",
-            "src": "contracts\\ReaperStrategyHappyRoadReloaded.sol:57"
+            "contract": "ReaperStrategyOdeToDefi",
+            "src": "contracts\\ReaperStrategyOdeToDefi.sol:57"
           },
           {
             "label": "mcPoolId",
             "offset": 0,
             "slot": "366",
             "type": "t_uint256",
-            "contract": "ReaperStrategyHappyRoadReloaded",
-            "src": "contracts\\ReaperStrategyHappyRoadReloaded.sol:58"
+            "contract": "ReaperStrategyOdeToDefi",
+            "src": "contracts\\ReaperStrategyOdeToDefi.sol:58"
           }
         ],
         "types": {
