@@ -58,7 +58,7 @@ describe('Vaults', function () {
     const ftmWhale = await ethers.getImpersonatedSigner("0x41Cc8B8c6b20A7d51668A163A0aBeF1202B76C34");
 
     let tx = await ftmWhale.sendTransaction({
-      to: owner,
+      to: owner.address,
       value: ethers.utils.parseEther('100.0'),
     });
     await tx.wait();

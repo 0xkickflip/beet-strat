@@ -11,9 +11,9 @@ import "./interfaces/IMasterChef.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the Happy Road Reloaded pool.
+ * @dev LP compounding strategy for the Ode to Defi pool.
  */
-contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
+contract ReaperStrategyOdeToDefi is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
@@ -49,9 +49,9 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     /**
      * @dev Strategy variables
-     * {gauge} - address of gauge in which LP tokens are staked
+     * {mcPoolId} - MasterChef pool
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
+     * {wftm Position} - Index of {WFTM} in the main pool.
      */
     bytes32 public beetsPoolId;
     uint256 public wftmPosition;
@@ -109,8 +109,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {OP} from gauge.
-     *      2. Swaps all {OP} and charges fee.
+     *      1. Claims {TOKENS} from MC.
+     *      2. Swaps all {TOKENS} and charges fee.
      *      3. Re-deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
@@ -122,10 +122,10 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of {OP} gained from reward.
+     *      Charges fees based on the amount of {TOKENS} gained from reward.
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
-        // OP -> OP_LINEAR using OP_LINEAR_POOL
+        // REWARDS -> WFTM using respective pools
         _beethovenSwap(BEETS, WFTM, BEETS.balanceOf(address(this)), FRESH_BEETS);
         _beethovenSwap(OATH, WFTM, OATH.balanceOf(address(this)), BEET_MASONS_OATH);
         _beethovenSwap(axlUSDC, ERN, axlUSDC.balanceOf(address(this)), A_STABLE_CHORD);
@@ -144,7 +144,7 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        // remaining OP_LINEAR used to join pool
+        // remaining WFTM used to join pool
         uint256 wftmBal = WFTM.balanceOf(address(this));
         if (wftmBal != 0) {
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
