@@ -92,7 +92,8 @@ contract ReaperStrategyOdeToDefi is ReaperBaseStrategyv3 {
         uint256 wantBalance = want.balanceOf(address(this));
         if (wantBalance != 0) {
             want.safeIncreaseAllowance(MASTER_CHEF, wantBalance);
-            IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));        }
+            IMasterChef(MASTER_CHEF).deposit(mcPoolId, wantBalance, address(this));
+        }
     }
 
     /**
@@ -117,7 +118,7 @@ contract ReaperStrategyOdeToDefi is ReaperBaseStrategyv3 {
         IMasterChef(MASTER_CHEF).harvest(mcPoolId, address(this));
         callerFee = _performSwapsAndChargeFees();
         _addLiquidity();
-        deposit();
+        _deposit();
     }
 
     /**
@@ -126,8 +127,8 @@ contract ReaperStrategyOdeToDefi is ReaperBaseStrategyv3 {
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
         // REWARDS -> WFTM using respective pools
+        _beethovenSwap(OATH, BEETS, OATH.balanceOf(address(this)), BEET_MASONS_OATH);
         _beethovenSwap(BEETS, WFTM, BEETS.balanceOf(address(this)), FRESH_BEETS);
-        _beethovenSwap(OATH, WFTM, OATH.balanceOf(address(this)), BEET_MASONS_OATH);
         _beethovenSwap(axlUSDC, ERN, axlUSDC.balanceOf(address(this)), A_STABLE_CHORD);
         _beethovenSwap(ERN, WFTM, ERN.balanceOf(address(this)), beetsPoolId);
 
@@ -158,7 +159,7 @@ contract ReaperStrategyOdeToDefi is ReaperBaseStrategyv3 {
             request.maxAmountsIn = amountsIn;
             request.userData = userData;
             request.fromInternalBalance = false;
-
+            WFTM.safeIncreaseAllowance(address(BEET_VAULT), wftmBal);
             BEET_VAULT.joinPool(beetsPoolId, address(this), address(this), request);
         }
     }

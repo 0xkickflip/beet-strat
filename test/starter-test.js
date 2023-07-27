@@ -43,6 +43,8 @@ describe('Vaults', function () {
         {
           forking: {
             jsonRpcUrl: 'https://rpc.ftm.tools/',
+            //blockNumber: 66163292,
+            blockNumber: 66335644,
           },
         },
       ],
@@ -347,7 +349,7 @@ describe('Vaults', function () {
     });
 
     it('should provide yield', async function () {
-      const {vault, strategy, want, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
+      const {vault, strategy, want, wftm, wantHolder} = await loadFixture(deployVaultAndStrategyAndGetSigners);
       const timeToSkip = 3600;
 
       await vault.connect(wantHolder).depositAll();
@@ -359,6 +361,9 @@ describe('Vaults', function () {
       for (let i = 0; i < numHarvests; i++) {
         await moveTimeForward(timeToSkip);
         await strategy.harvest();
+        const wftmBal = await wftm.balanceOf(strategy.address);
+        const wantBal = await want.balanceOf(strategy.address);
+        console.log("wantBal " + wantBal);
       }
 
       const finalVaultBalance = await vault.balance();

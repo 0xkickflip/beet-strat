@@ -8,7 +8,7 @@
     },
     {
       "address": "0x4b6aB5F819A515382B0dEB6935D793817bB4af28",
-      "txHash": "0x26b2e802cdd16c956490daf73f15ddc6f10935a21dd8b5383c5a3b2c4eded175",
+      "txHash": "0xc4e9f48cab6c02ce54c1f866aeff201fe1cbb62b87b025496fdad4887b11a5d7",
       "kind": "uups"
     }
   ],
@@ -382,9 +382,9 @@
         }
       }
     },
-    "4c667424201684fa06d3787d15ed5d242c9eb8ded32d5f08b2b212669e60db8b": {
+    "0e488c19907d36ebc0942c9d43a526e490f7e02eff19eb1132cf7f9ec7ed1695": {
       "address": "0x18E317A7D70d8fBf8e6E893616b52390EbBdb629",
-      "txHash": "0x884cea940e195bd4944b2f44def2a2a4dc69b1292fce32aa32228206208b9c57",
+      "txHash": "0x21331575c85073c29dc30eb870ca6aad40e9d7b6250e02818b1611b3ce00a870",
       "layout": {
         "storage": [
           {
@@ -488,7 +488,7 @@
             "label": "harvestLog",
             "offset": 0,
             "slot": "351",
-            "type": "t_array(t_struct(Harvest)6846_storage)dyn_storage",
+            "type": "t_array(t_struct(Harvest)6856_storage)dyn_storage",
             "contract": "ReaperBaseStrategyv3",
             "src": "contracts\\abstract\\ReaperBaseStrategyv3.sol:27"
           },
@@ -584,7 +584,7 @@
             "label": "underlyings",
             "offset": 0,
             "slot": "363",
-            "type": "t_array(t_contract(IAsset)7662)dyn_storage",
+            "type": "t_array(t_contract(IAsset)7672)dyn_storage",
             "contract": "ReaperStrategyOdeToDefi",
             "src": "contracts\\ReaperStrategyOdeToDefi.sol:42"
           },
@@ -622,11 +622,11 @@
             "label": "bytes32[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_contract(IAsset)7662)dyn_storage": {
+          "t_array(t_contract(IAsset)7672)dyn_storage": {
             "label": "contract IAsset[]",
             "numberOfBytes": "32"
           },
-          "t_array(t_struct(Harvest)6846_storage)dyn_storage": {
+          "t_array(t_struct(Harvest)6856_storage)dyn_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest[]",
             "numberOfBytes": "32"
           },
@@ -646,7 +646,7 @@
             "label": "bytes32",
             "numberOfBytes": "32"
           },
-          "t_contract(IAsset)7662": {
+          "t_contract(IAsset)7672": {
             "label": "contract IAsset",
             "numberOfBytes": "20"
           },
@@ -682,7 +682,7 @@
             ],
             "numberOfBytes": "64"
           },
-          "t_struct(Harvest)6846_storage": {
+          "t_struct(Harvest)6856_storage": {
             "label": "struct ReaperBaseStrategyv3.Harvest",
             "members": [
               {
