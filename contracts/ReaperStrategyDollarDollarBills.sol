@@ -12,14 +12,13 @@ import "./interfaces/IVeloRouter.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
- * @dev LP compounding strategy for the Happy Road Reloaded pool.
+ * @dev LP compounding strategy for the Dollar Dollar Bills pool.
  */
-contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
+contract ReaperStrategyDollarDollarBills is ReaperBaseStrategyv3 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     // 3rd-party contract addresses
     IBeetVault public constant BEET_VAULT = IBeetVault(0xBA12222222228d8Ba445958a75a0704d566BF2C8);
-    address public constant VELODROME_ROUTER = address(0xa132DAB612dB5cB9fC9Ac426A0Cc215A3423F9c9);
 
     /**
      * @dev Tokens Used:
@@ -31,27 +30,32 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      * {want} - LP token for the Beethoven-x pool.
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
+    IERC20Upgradeable public constant BAL = IERC20Upgradeable(0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921);
+    IERC20Upgradeable public constant OATH = IERC20Upgradeable(0x39FdE572a18448F8139b7788099F0a0740f51205);
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
-    address public constant OP_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
-    address public constant SONNE_USDC_VELO = address(0xA4e597c1bD01859B393b124ce18427Aa4426A871);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
-    IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0xba7834bb3cd2DB888E6A06Fb45E82b4225Cd0C71);
+    IERC20Upgradeable public constant WETH = IERC20Upgradeable(0x4200000000000000000000000000000000000006);    
     IERC20Upgradeable public want;
     IAsset[] public underlyings;
 
     // pools used to swap tokens
-    bytes32 public constant USDC_LINEAR_POOL = 0xba7834bb3cd2db888e6a06fb45e82b4225cd0c71000000000000000000000043;
-
+    bytes32 public constant ALL_YOU_NEED_IS_LOVE = 0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006; // BAL TO OP
+    bytes32 public constant HAPPY_ROAD = 0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003; // OP TO USDC
+    bytes32 public constant AN_OATH_TO_ERN = 0x0604d50e1a314e0b8963a8387713ec0b539920b30001000000000000000000bf; // OATH TO ERN
+    bytes32 public constant DOLLAR_DOLLAR_BILLS = 0x62cf35db540152e94936de63efc90d880d4e241b0000000000000000000000ef; // ERN TO USDC
+    
+    bytes32 public constant BONDED_OATH_TOKEN = 0xd20f6f1d8a675cdca155cb07b5dc9042c467153f0002000000000000000000bc; // OATH TO WETH
+    bytes32 public constant LENNONS_LONG = 0x5028497af0c9a54ea8c6d42a054c0341b9fc6168000100000000000000000004; // WETH TO USDC
 
     /**
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {opLinearPosition} - Index of {OP_LINEAR} in the main pool.
+     * {opLinearPosition} - Index of {USDC} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public opLinearPosition;
+    uint256 public usdcPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -72,8 +76,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(OP_LINEAR)) {
-                opLinearPosition = i;
+            if (address(tokens[i]) == address(USDC)) {
+                usdcPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -106,8 +110,8 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core function of the strat, in charge of collecting and re-investing rewards.
-     *      1. Claims {OP} from gauge.
-     *      2. Swaps all {OP} and charges fee.
+     *      1. Claims {TOKENS} from gauge.
+     *      2. Swaps all {TOKENS} and charges fee.
      *      3. Re-deposits.
      */
     function _harvestCore() internal override returns (uint256 callerFee) {
@@ -127,19 +131,25 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
 
     /**
      * @dev Core harvest function.
-     *      Charges fees based on the amount of {OP} gained from reward.
+     *      Charges fees based on the amount of {TOKENS} gained from reward.
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
-        // OP -> OP_LINEAR using OP_LINEAR_POOL
-        _beethovenSwap(OP, OP_LINEAR, OP.balanceOf(address(this)), OP_LINEAR_POOL);
+        // BAL to OP using ALL YOU NEED IS LOVE
+        _beethovenSwap(BAL, OP, BAL.balanceOf(address(this)), ALL_YOU_NEED_IS_LOVE);
+        // OP to USDC using HAPPY ROAD
+        _beethovenSwap(OP, USDC, OP.balanceOf(address(this)), HAPPY_ROAD);
+        // OATH to WETH using BONDED_OATH_TOKEN
+        _beethovenSwap(OATH, WETH, OATH.balanceOf(address(this)), BONDED_OATH_TOKEN);
+        // WETH to USDC using LENNONS LONG
+        _beethovenSwap(WETH, USDC, WETH.balanceOf(address(this)), LENNONS_LONG);
 
         // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
-        _beethovenSwap(
-            OP_LINEAR,
-            USD_STABLE,
-            (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-            beetsPoolId
-        );
+        //_beethovenSwap(
+        //    OP_LINEAR,
+        //    USD_STABLE,
+        //    (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
+        //    beetsPoolId
+        //);
 
         uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
         if (usdStableFee != 0) {
@@ -165,12 +175,12 @@ contract ReaperStrategyHappyRoadReloaded is ReaperBaseStrategyv3 {
      *      Converts reward tokens to want
      */
     function _addLiquidity() internal {
-        // remaining OP_LINEAR used to join pool
-        uint256 opLinearBal = OP_LINEAR.balanceOf(address(this));
-        if (opLinearBal != 0) {
+        // remaining USDC used to join pool
+        uint256 usdcBal = USDC.balanceOf(address(this));
+        if (usdcBal != 0) {
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
             uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[opLinearPosition] = opLinearBal;
+            amountsIn[usdcPosition] = usdcBal;
             uint256 minAmountOut = 1;
             bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
