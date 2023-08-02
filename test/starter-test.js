@@ -33,7 +33,7 @@ const wantAddress = '0x62cF35DB540152e94936dE63eFc90d880D4e241B';
 const gauge = '0xe313A5F9EFc0A9f7439bA3cBfA4471465ba350EB';
 const usdcAddress = '0x7F5c764cBc14f9669B88837ca1490cCa17c31607';
 
-const wantHolderAddr = '0x3b410908e71Ee04e7dE2a87f8F9003AFe6c1c7cE'; //TODO
+const wantHolderAddr = '0xc30cd48438B9404A5910CDEB0387627784104379';
 
 describe('Vaults', function () {
   async function deployVaultAndStrategyAndGetSigners() {
@@ -59,11 +59,11 @@ describe('Vaults', function () {
 
     // get artifacts
     const Vault = await ethers.getContractFactory('ReaperVaultv1_4');
-    const Strategy = await ethers.getContractFactory('ReaperStrategyHappyRoadReloaded');
+    const Strategy = await ethers.getContractFactory('ReaperStrategyDollarDollarBills');
     const Want = await ethers.getContractFactory('@openzeppelin/contracts/token/ERC20/ERC20.sol:ERC20');
 
     // deploy contracts
-    const vault = await Vault.deploy(wantAddress, `Happy Road Reloaded Beethoven-X Crypt`, 'rf-bb-HAPPY', 0, ethers.constants.MaxUint256);
+    const vault = await Vault.deploy(wantAddress, `Dollar Dollar Bills Beethoven-X Vault`, 'rf-bb-DOLLAR', 0, ethers.constants.MaxUint256);
     await vault.deployed();
     const strategy = await upgrades.deployProxy(
       Strategy,
