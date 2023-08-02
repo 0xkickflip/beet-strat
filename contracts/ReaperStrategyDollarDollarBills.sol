@@ -31,31 +31,29 @@ contract ReaperStrategyDollarDollarBills is ReaperBaseStrategyv3 {
      * {underlyings} - Array of IAsset type to represent the underlying tokens of the pool.
      */
     IERC20Upgradeable public constant BAL = IERC20Upgradeable(0xFE8B128bA8C78aabC59d4c64cEE7fF28e9379921);
-    IERC20Upgradeable public constant OATH = IERC20Upgradeable(0x39FdE572a18448F8139b7788099F0a0740f51205);
     IERC20Upgradeable public constant OP = IERC20Upgradeable(0x4200000000000000000000000000000000000042);
+    IERC20Upgradeable public constant OATH = IERC20Upgradeable(0x39FdE572a18448F8139b7788099F0a0740f51205);
+    IERC20Upgradeable public constant WETH = IERC20Upgradeable(0x4200000000000000000000000000000000000006);
     IERC20Upgradeable public constant USDC = IERC20Upgradeable(0x7F5c764cBc14f9669B88837ca1490cCa17c31607);
-    IERC20Upgradeable public constant WETH = IERC20Upgradeable(0x4200000000000000000000000000000000000006);    
+    IERC20Upgradeable public constant USDC_LINEAR = IERC20Upgradeable(0x20715545C15C76461861Cb0D6ba96929766D05A5);
     IERC20Upgradeable public want;
     IAsset[] public underlyings;
 
     // pools used to swap tokens
-    bytes32 public constant ALL_YOU_NEED_IS_LOVE = 0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006; // BAL TO OP
-    bytes32 public constant HAPPY_ROAD = 0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003; // OP TO USDC
-    bytes32 public constant AN_OATH_TO_ERN = 0x0604d50e1a314e0b8963a8387713ec0b539920b30001000000000000000000bf; // OATH TO ERN
-    bytes32 public constant DOLLAR_DOLLAR_BILLS = 0x62cf35db540152e94936de63efc90d880d4e241b0000000000000000000000ef; // ERN TO USDC
-    
-    bytes32 public constant BONDED_OATH_TOKEN = 0xd20f6f1d8a675cdca155cb07b5dc9042c467153f0002000000000000000000bc; // OATH TO WETH
-    bytes32 public constant LENNONS_LONG = 0x5028497af0c9a54ea8c6d42a054c0341b9fc6168000100000000000000000004; // WETH TO USDC
+    bytes32 public constant ALL_YOU_NEED_IS_LOVE = 0xd6e5824b54f64ce6f1161210bc17eebffc77e031000100000000000000000006; //BAL to OP
+    bytes32 public constant BONDED_OATH_TOKEN = 0xd20f6f1d8a675cdca155cb07b5dc9042c467153f0002000000000000000000bc; //OATH to WETH
+    bytes32 public constant HAPPY_ROAD = 0x39965c9dab5448482cf7e002f583c812ceb53046000100000000000000000003; //OP to USDC, WETH to USDC
+    bytes32 public constant USDC_LINEAR_POOL = 0x20715545c15c76461861cb0d6ba96929766d05a50000000000000000000000e8 ;
 
     /**
      * @dev Strategy variables
      * {gauge} - address of gauge in which LP tokens are staked
      * {beetsPoolId} - bytes32 ID of the Beethoven-X pool corresponding to {want}
-     * {opLinearPosition} - Index of {USDC} in the main pool.
+     * {usdcLinearPosition} - Index of {USDC_LINEAR} in the main pool.
      */
     IRewardsOnlyGauge public gauge;
     bytes32 public beetsPoolId;
-    uint256 public usdcPosition;
+    uint256 public usdcLinearPosition;
 
     /**
      * @dev Initializes the strategy. Sets parameters and saves routes.
@@ -76,8 +74,8 @@ contract ReaperStrategyDollarDollarBills is ReaperBaseStrategyv3 {
 
         (IERC20Upgradeable[] memory tokens, , ) = BEET_VAULT.getPoolTokens(beetsPoolId);
         for (uint256 i = 0; i < tokens.length; i++) {
-            if (address(tokens[i]) == address(USDC)) {
-                usdcPosition = i;
+            if (address(tokens[i]) == address(USDC_LINEAR)) {
+                usdcLinearPosition = i;
             }
 
             underlyings.push(IAsset(address(tokens[i])));
@@ -134,39 +132,22 @@ contract ReaperStrategyDollarDollarBills is ReaperBaseStrategyv3 {
      *      Charges fees based on the amount of {TOKENS} gained from reward.
      */
     function _performSwapsAndChargeFees() internal returns (uint256 callFeeToUser) {
-        // BAL to OP using ALL YOU NEED IS LOVE
+        // BAL to OP using ALL_YOU_NEED_IS_LOVE
         _beethovenSwap(BAL, OP, BAL.balanceOf(address(this)), ALL_YOU_NEED_IS_LOVE);
-        // OP to USDC using HAPPY ROAD
+        // OP to USDC using HAPPY_ROAD
         _beethovenSwap(OP, USDC, OP.balanceOf(address(this)), HAPPY_ROAD);
         // OATH to WETH using BONDED_OATH_TOKEN
         _beethovenSwap(OATH, WETH, OATH.balanceOf(address(this)), BONDED_OATH_TOKEN);
-        // WETH to USDC using LENNONS LONG
-        _beethovenSwap(WETH, USDC, WETH.balanceOf(address(this)), LENNONS_LONG);
+        // WETH to USDC using HAPPY_ROAD
+        _beethovenSwap(WETH, USDC, WETH.balanceOf(address(this)), HAPPY_ROAD);
 
-        // convert totalFee% of OP_LINEAR to USD_STABLE using beetsPoolId
-        //_beethovenSwap(
-        //    OP_LINEAR,
-        //    USD_STABLE,
-        //    (OP_LINEAR.balanceOf(address(this)) * totalFee) / PERCENT_DIVISOR,
-        //    beetsPoolId
-        //);
+        uint256 usdcFee = USDC.balanceOf(address(this))* totalFee / PERCENT_DIVISOR;
+        if (usdcFee != 0) {
+            callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
+            uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
 
-        uint256 usdStableFee = USD_STABLE.balanceOf(address(this));
-        if (usdStableFee != 0) {
-            // USD_STABLE -> USDC_LINEAR using STEADY_BEETS_BOOSTED
-            _beethovenSwap(USD_STABLE, USDC_LINEAR, usdStableFee, STEADY_BEETS_BOOSTED);
-
-            // USDC_LINEAR -> USDC using USDC_LINEAR_POOL
-            _beethovenSwap(USDC_LINEAR, USDC, USDC_LINEAR.balanceOf(address(this)), USDC_LINEAR_POOL);
-
-            uint256 usdcFee = USDC.balanceOf(address(this));
-            if (usdcFee != 0) {
-                callFeeToUser = (usdcFee * callFee) / PERCENT_DIVISOR;
-                uint256 treasuryFeeToVault = (usdcFee * treasuryFee) / PERCENT_DIVISOR;
-
-                USDC.safeTransfer(msg.sender, callFeeToUser);
-                USDC.safeTransfer(treasury, treasuryFeeToVault);
-            }
+            USDC.safeTransfer(msg.sender, callFeeToUser);
+            USDC.safeTransfer(treasury, treasuryFeeToVault);
         }
     }
 
@@ -178,9 +159,12 @@ contract ReaperStrategyDollarDollarBills is ReaperBaseStrategyv3 {
         // remaining USDC used to join pool
         uint256 usdcBal = USDC.balanceOf(address(this));
         if (usdcBal != 0) {
+            // USDC to USDC_LINEAR using USDC_LINEAR_POOL
+            _beethovenSwap(USDC, USDC_LINEAR, USDC.balanceOf(address(this)), USDC_LINEAR_POOL);
+
             IBaseWeightedPool.JoinKind joinKind = IBaseWeightedPool.JoinKind.EXACT_TOKENS_IN_FOR_BPT_OUT;
             uint256[] memory amountsIn = new uint256[](underlyings.length);
-            amountsIn[usdcPosition] = usdcBal;
+            amountsIn[usdcLinearPosition] = USDC_LINEAR.balanceOf(address(this));
             uint256 minAmountOut = 1;
             bytes memory userData = abi.encode(joinKind, amountsIn, minAmountOut);
 
