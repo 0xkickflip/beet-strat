@@ -8,7 +8,6 @@ import "./interfaces/IBasePool.sol";
 import "./interfaces/IBaseWeightedPool.sol";
 import "./interfaces/IBeetVault.sol";
 import "./interfaces/IRewardsOnlyGauge.sol";
-import "./interfaces/IVeloRouter.sol";
 import "@openzeppelin/contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 
 /**
